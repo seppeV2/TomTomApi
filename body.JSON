@@ -1,0 +1,21 @@
+{
+    "supportingPoints": [
+      {"latitude": 52.50930, "longitude": 13.42936},
+      {"latitude": 52.50844, "longitude": 13.42859}
+    ],
+    "pointWaypoints": [
+      {
+        "waypointSourceType": "USER_DEFINED",
+        "supportingPointIndex": 0
+      }
+    ],
+    "avoidVignette": [
+      "AUS",
+      "CHE"
+    ],
+    "reassessmentParameterSets": [
+      {
+        "auxiliaryPowerInkW": 0.3
+      }
+    ]
+  }
