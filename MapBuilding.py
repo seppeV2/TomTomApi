@@ -13,6 +13,7 @@ from tqdm import tqdm
 
 api_key1 = 'm48ctXO8JwRAMDkRxbq2yqtngG3dsO7F'
 api_key2 = 'Gcw5ye6iGdXCPqtOllT2idD7OUmOUIG7'
+api_key3 = 'ealGbxH7zbd5RKJg94Yz4yvnrB2d0cu1'
 
 #locations =  [longitude, latitude] 
 location_amsterdam = [52.377956, 4.897070]
