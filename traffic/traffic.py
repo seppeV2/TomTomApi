@@ -13,7 +13,7 @@ from mapBuilding.MapBuilding import initialise_map, add_marker, add_polyLine
 baseUrl = "https://api.tomtom.com/traffic/services/4/flowSegmentData/"
 
 #url with options
-style = "absolute"
+style = "reduced-sensitivity"
 zoom = str(10)
 formatt = "xml"
 apiKey = "m48ctXO8JwRAMDkRxbq2yqtngG3dsO7F"
