@@ -10,6 +10,10 @@ url = baseUrl + extraUrl
 bd = open('ODAnalysis/body.JSON')
 body = json.load(bd)
 
+w = open('ODAnalysis/test.json', 'w')
+json.dump(body, w)
+w.close()
+
 r = requests.post(url, json = body )
 
 print(url)
