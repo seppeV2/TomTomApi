@@ -3,6 +3,9 @@ import requests
 import xmltodict
 import sys
  
+ #this is a test where we receive a png plot of the flow rates instead of just data.
+ #click on the url to see the result
+
 # setting path
 sys.path.append('../TomTomApi')
 
