@@ -1,9 +1,10 @@
 import dyntapy
 import pandas as pd
 import geopandas as gpd
+import os
 
 #od_table = pd.read_csv("data/Verplaatsingen_bestuurder_uur_spmVlaanderenVersie4.2.2_2017.CVS")
-zoning = gpd.read_file("data/ZoningLeuven/ZoningLeuven.zip")
+zoning = gpd.read_file((os.getcwd()+"AllZonings/ZoningLeuven/ZoningLeuven.zip"))
 origin_column = ""
 destination_column = ""
 zone_column = ""
