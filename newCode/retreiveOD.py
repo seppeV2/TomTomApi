@@ -1,16 +1,14 @@
-import dyntapy
+import dyntapy.demand_data
 import pandas as pd
 import geopandas as gpd
-import os
+import pathlib
 
-#od_table = pd.read_csv("data/Verplaatsingen_bestuurder_uur_spmVlaanderenVersie4.2.2_2017.CVS")
-zoning = gpd.read_file((os.getcwd()+"AllZonings/ZoningLeuven/ZoningLeuven.zip"))
-origin_column = ""
-destination_column = ""
-zone_column = ""
-flow_column = ""
-return_relabelling = True
+od_table = pd.read_csv(str(pathlib.Path(__file__).parent)+"/data/Verplaatsingen_bestuurder_uur_spmVlaanderenVersie4.2.2_2017.csv")
+zoning = gpd.read_file(str(pathlib.Path(__file__).parent)+'/data/ZoningLeuven.zip')
+origin_column = 'H'
+destination_column = 'B'
+zone_column = 'ZONENUMMER'
+flow_column = 'Tab:7'
 
-
-print(zoning)
-#dyntapy.demand_data.od_matrix_from_dataframes(od_table,zoning, origin_column, destination_column, flow_column, return_relabelling)
+odMatrix = dyntapy.od_matrix_from_dataframes(od_table,zoning, origin_column, destination_column,zone_column, flow_column)
+print(odMatrix)
