@@ -1,7 +1,7 @@
 #own files
 newCode/data/Verplaatsingen_bestuurder_uur_spmVlaanderenVersie4.2.2_2017.CSV
 mow-demand-extractor/
-
+*/.DS_Store
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
