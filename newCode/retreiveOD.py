@@ -24,3 +24,5 @@ def get_od_matrix_from_database():
     np.savetxt(str(pathlib.Path(__file__).parent)+"/data/results/odMatrixResult.csv", odMatrix, delimiter=",", fmt='%d')
 
     return odMatrix
+
+get_od_matrix_from_database()
