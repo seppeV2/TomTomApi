@@ -1,16 +1,24 @@
-from operational_functions import od_matrix_from_tomtom
+from operational_functions import od_matrix_from_tomtom, find_optimal_coef, calculate_gap
 import pathlib
 import pandas as pd 
 import geopandas as gpd
 from dyntapy.demand_data import od_matrix_from_dataframes
-from math import sqrt
 import numpy as np
+from sklearn.linear_model import LinearRegression
+
 np.set_printoptions(suppress=True)
 
 
 def main():
     original_od, tomtom_od = setup_test_case()
-    
+    coefNonDiagnal = find_optimal_coef(original_od,tomtom_od)
+
+    print('original gap = '+str(calculate_gap(original_od, tomtom_od)))
+
+    newOD = coefNonDiagnal * tomtom_od
+
+    print('second gap = '+str(calculate_gap(original_od, newOD)))
+
 
 
 
