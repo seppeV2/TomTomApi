@@ -18,7 +18,8 @@ def od_matrix_from_tomtom(pathToFile, flow):
     #fill the empty array with the flows
     for i in range(size):
         for j in range(size):
-            od_matrix[i][j] += int(result[flow][i*size+j])
+            if j != i:
+                od_matrix[i][j] += int(result[flow][i*size+j])
 
     return od_matrix
 
