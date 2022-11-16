@@ -1,23 +1,50 @@
-from operational_functions import od_matrix_from_tomtom, find_optimal_coef, calculate_gap
+from operational_functions import od_matrix_from_tomtom, calculate_gap,matrix_to_list, normalize, get_split_matrices,matrix_to_list_splitsed
 import pathlib
 import pandas as pd 
 import geopandas as gpd
 from dyntapy.demand_data import od_matrix_from_dataframes
 import numpy as np
+import scipy
 from sklearn.linear_model import LinearRegression
-
 np.set_printoptions(suppress=True)
 
 
 def main():
+    print("START SETUP\n")
     original_od, tomtom_od = setup_test_case()
-    coefNonDiagnal = find_optimal_coef(original_od,tomtom_od)
+        #normalize the matrices
+    original_od = normalize(original_od)
+    tomtom_od = normalize(tomtom_od)    
+    print("CREATE THE DIFFERENT SPLITS")
+    
+    splits = get_split_matrices(tomtom_od)
 
-    print('original gap = '+str(calculate_gap(original_od, tomtom_od)))
+    print("START LINEAR REGRESSION\n")
 
-    newOD = coefNonDiagnal * tomtom_od
+        
+    
 
-    print('second gap = '+str(calculate_gap(original_od, newOD)))
+    slopes = []
+    intercepts = []
+    loop = 1
+    newOD = np.zeros(tomtom_od.size)
+    intermediateMatrices = []
+    for i  in range(len(splits[1])):
+        #resize matrix to list to apply the linear regression
+        tomtomList,originalList = matrix_to_list_splitsed(splits[1][i],original_od)
+
+        #actual linear regression
+        slope, intercept, r_value, p_value, std_err = scipy.stats.linregress(tomtomList, originalList)
+        slopes.append(slope)
+        intercepts.append(intercept)
+        print("The regression for split {}: Y = {} * X + {} ".format(loop, slope, intercept))
+        intermediateMatrix = np.multiply(tomtom_od,splits[0][i])
+        #newOD += np.array(intermediateMatrix)
+        loop += 1 
+
+    print('\noriginal gap = '+str(calculate_gap(original_od, tomtom_od)))
+  
+    #print('second gap = '+str(calculate_gap(original_od, newOD)))
 
 
 
