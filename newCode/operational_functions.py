@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 from sympy import *
 from scipy.optimize import minimize 
+import matplotlib as plt
 
 
 
@@ -48,20 +49,37 @@ def calculate_gap(matrix1, matrix2):
     return gap
 
 #function to make a list form the matrix 
-    #input = squared matrix
+    #input = squared matrix and optional the shape matrix (so only relevant elements in the list)
     #returns the list  
-def matrix_to_list(matrix):
-    return matrix.reshape([1,len(matrix)**2])
+def matrix_to_list(matrix, shape = []):
+    if shape == []:
+        return matrix.reshape([1,len(matrix)**2])
+    else:
+        list = []
+        for i in range(len(shape)):
+            for j in range(len(shape)):
+                if shape[i,j] == 1:
+                    list.append(matrix[i,j])
+        return np.array(list)
 
 #function to make a matrix from the list
-    #input = list (made of squared matrix) + len of that matrix
+    #input = list (made of squared matrix) + shape matrix (only put back the relevant elements)
     #return = resized matrix
-def list_to_matrix(list, size):
-    return list.reshape([size,size])
+def list_to_matrix(list, shapeMatrix):
+    matrix  = np.zeros(shapeMatrix.shape)
+    counter = 0
+    for i in range(len(matrix)):
+        for j in range(len(matrix)):
+            if shapeMatrix[i,j] == 1:
+                matrix[i,j] += list[counter]
+                counter+=1
+    return matrix
 
+#return the normalized matrix
 def normalize(matrix):
     return matrix/(sum(matrix))
 
+#split matrix in shapes according the values inside the matrix
 def get_split_matrices(matrix):
     shape1 = np.zeros(matrix.shape)
     tuple1 = np.zeros(matrix.shape,dtype = object)
@@ -72,24 +90,8 @@ def get_split_matrices(matrix):
     for i in range(len(matrix)):
         for j in range(len(matrix)):
             if matrix[i,j] <= average:
-                tuple1[i,j] = (matrix[i,j], 1)
-                tuple2[i,j] = (matrix[i,j], 0)
                 shape1[i,j] = 1
             else:
-                tuple1[i,j] = (matrix[i,j], 0)
-                tuple2[i,j] = (matrix[i,j], 1)
                 shape2[i,j] = 1 
-    return [shape1, shape2] , [tuple1, tuple2]
-
-#matrix 1 is a tuple matrix shaped with the get split funtion 
-#matrix 2 is a normal matrix where you want the values at the same location
-def matrix_to_list_splitsed(matrix1, matrix2):
-    list1 = []
-    list2 = []
-    for i in range(len(matrix2)):
-        for j in range(len(matrix2)):
-            if matrix1[i,j][1] == 1:
-                list1.append(matrix1[i,j][0])
-                list2.append(matrix2[i,j])
-    return list1, list2
+    return [shape1, shape2]
 
