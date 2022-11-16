@@ -80,18 +80,33 @@ def normalize(matrix):
     return matrix/(sum(matrix))
 
 #split matrix in shapes according the values inside the matrix
-def get_split_matrices(matrix):
-    shape1 = np.zeros(matrix.shape)
-    tuple1 = np.zeros(matrix.shape,dtype = object)
-    shape2 = np.zeros(matrix.shape)
-    tuple2 = np.zeros(matrix.shape,dtype = object)
-    average = np.average(matrix)
+def get_split_matrices(matrix, slices: int = -1):
+    #split matrices in x slices between min (0) and max values
+    if slices != -1:
+        shapes = []
+        prev = -1
+        for k in range(slices):
+            next = np.max(matrix)*((k+1)/slices)
+            shape = np.zeros(matrix.shape)
+            for i in range(len(matrix)):
+                for j in range(len(matrix)):
+                    if prev < matrix[i,j] <= next:
+                        shape[i,j] += 1
+            prev = next
+            shapes.append(shape)
+        return shapes
+    #split matrix in two slices (before and after average)
+    else: 
+        shape1 = np.zeros(matrix.shape)
+        shape2 = np.zeros(matrix.shape)
+        average = np.average(matrix)
+        for i in range(len(matrix)):
+            for j in range(len(matrix)):
+                if matrix[i,j] <= average:
+                    shape1[i,j] = 1
+                else:
+                    shape2[i,j] = 1 
+        return [shape1, shape2]
 
-    for i in range(len(matrix)):
-        for j in range(len(matrix)):
-            if matrix[i,j] <= average:
-                shape1[i,j] = 1
-            else:
-                shape2[i,j] = 1 
-    return [shape1, shape2]
+    
 

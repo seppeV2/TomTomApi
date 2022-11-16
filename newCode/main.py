@@ -30,7 +30,7 @@ def main():
         print("START LINEAR REGRESSION\n")
         slopes_one_zone = []
         intercepts_one_zone = []
-        loop = 1
+        loop = 0
         shapes = get_split_matrices(tomtom_od)
         approx_matrix = np.zeros(tomtom_od.shape)
         for i  in range(len(shapes)):
@@ -81,11 +81,9 @@ def main():
     x = np.linspace(0,10,300)
 
     for s, i , zone in zip(slopes, intercepts, move):
-        y1 = s[0]*x + i[0]
-        y2 = s[1]*x + i[1]
-
-        ax2.plot(x,y1, label = 'less than average from {}'.format(zone))
-        ax2.plot(x,y2, label = 'more than average from {}'.format(zone))
+        for k in range(len(s)):
+            y1 = s[k]*x + i[k]
+            ax2.plot(x,y1, label = 'Eq for {}th piece of {} od_reg'.format(k,zone))
 
     ax2.legend()
     ax2.set_ylabel("Y")
