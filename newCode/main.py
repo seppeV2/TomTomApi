@@ -20,6 +20,8 @@ def main():
     slopes = []
     intercepts = []
 
+    plot = True
+
     for zone, move in zip(zonings, moves):
         print("START SETUP FOR {}\n".format(move))
         original_od, tomtom_od = setup_test_case(zone, move)
@@ -62,35 +64,36 @@ def main():
         slopes.append(slopes_one_zone)
         intercepts.append(intercepts_one_zone)
 
-    #make some plots 
-    fig,ax = plt.subplots()
+    if plot:
+        #make some plots 
+        fig,ax = plt.subplots()
 
-    width = 0.3
-    x_original = [x-width/2 for x in range(len(origGap))]
-    x_approx = [x+width/2 for x in range(len(approxGap))]
+        width = 0.3
+        x_original = [x-width/2 for x in range(len(origGap))]
+        x_approx = [x+width/2 for x in range(len(approxGap))]
 
-    ax.bar(x_original, origGap, width, label = 'original Gap',color = 'darkslategray')
-    ax.bar(x_approx, approxGap, width, label = 'approx Gap',color = 'crimson')
-    
-    ax.set_xticks(range(len(moves)), moves)
-    ax.set_title('Gaps for different zones before and after linear regression')
-    ax.set_ylabel('normalized gap')
-    ax.legend()
+        ax.bar(x_original, origGap, width, label = 'original Gap',color = 'darkslategray')
+        ax.bar(x_approx, approxGap, width, label = 'approx Gap',color = 'crimson')
+        
+        ax.set_xticks(range(len(moves)), moves)
+        ax.set_title('Gaps for different zones before and after linear regression')
+        ax.set_ylabel('normalized gap')
+        ax.legend()
 
-    fig,ax2 = plt.subplots()
-    x = np.linspace(0,10,300)
+        fig,ax2 = plt.subplots()
+        x = np.linspace(0,10,300)
 
-    for s, i , zone in zip(slopes, intercepts, move):
-        for k in range(len(s)):
-            y1 = s[k]*x + i[k]
-            ax2.plot(x,y1, label = 'Eq for {}th piece of {} od_reg'.format(k,zone))
+        for s, i , zone in zip(slopes, intercepts, move):
+            for k in range(len(s)):
+                y1 = s[k]*x + i[k]
+                ax2.plot(x,y1, label = 'Eq for {}th piece of {} od_reg'.format(k,zone))
 
-    ax2.legend()
-    ax2.set_ylabel("Y")
-    ax2.set_xlabel("X")
-    ax2.set_title('Linear equations from the different test zones + split matrices')
+        ax2.legend()
+        ax2.set_ylabel("Y")
+        ax2.set_xlabel("X")
+        ax2.set_title('Linear equations from the different test zones + split matrices')
 
-    plt.show()
+        plt.show()
 
 
 
