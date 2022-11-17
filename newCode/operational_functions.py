@@ -4,14 +4,15 @@ import numpy as np
 import pandas as pd
 from sympy import *
 from scipy.optimize import minimize 
-import matplotlib as plt
-import matplotlib.pyplot as pltpy
+import matplotlib.pyplot as plt
 import seaborn as sns
 
-#function to extract heatmap from OD-matrix
-def heatmap(od):
-    heatmap = sns.heatmap(od)
-    pltpy.show(heatmap)
+
+def heatmaps(od_original, od_tomtom):
+    fig, ax = plt.subplots(1, 2)
+    sns.heatmap(od_tomtom, ax=ax[0]).set(title='TomTom')
+    sns.heatmap(od_original, ax=ax[1]).set(title='Original')
+    plt.show()
 
 
 #function to make a np.array from the tomtom move csv file
@@ -83,6 +84,7 @@ def list_to_matrix(list, shapeMatrix):
 
 #return the normalized matrix
 def normalize(matrix):
+    print(np.sum(matrix))
     return matrix/(sum(matrix))
 
 #split matrix in shapes according the values inside the matrix
