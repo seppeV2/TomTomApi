@@ -5,7 +5,13 @@ import pandas as pd
 from sympy import *
 from scipy.optimize import minimize 
 import matplotlib as plt
+import matplotlib.pyplot as pltpy
+import seaborn as sns
 
+#function to extract heatmap from OD-matrix
+def heatmap(od):
+    heatmap = sns.heatmap(od)
+    pltpy.show(heatmap)
 
 
 #function to make a np.array from the tomtom move csv file
