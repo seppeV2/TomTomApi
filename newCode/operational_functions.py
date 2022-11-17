@@ -8,11 +8,12 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 
-def heatmaps(od_original, od_tomtom):
+def heatmaps(matrix1, matrix2, zone, name1, name2):
     fig, ax = plt.subplots(1, 2)
-    sns.heatmap(od_tomtom, ax=ax[0]).set(title='TomTom')
-    sns.heatmap(od_original, ax=ax[1]).set(title='Original')
-    plt.show()
+    fig.suptitle(zone)
+    sns.heatmap(matrix2, ax=ax[0]).set(title=name1)
+    sns.heatmap(matrix1, ax=ax[1]).set(title=name2)
+    plt.savefig(str(pathlib.Path(__file__).parents[1])+'/graphsFromResults/heatmap_{}.png'.format(zone))
 
 
 #function to make a np.array from the tomtom move csv file
@@ -84,7 +85,6 @@ def list_to_matrix(list, shapeMatrix):
 
 #return the normalized matrix
 def normalize(matrix):
-    print(np.sum(matrix))
     return matrix/(np.sum(matrix))
 
 #split matrix in shapes according the values inside the matrix

@@ -29,16 +29,16 @@ def main():
         original_od = normalize(original_od)
         tomtom_od = normalize(tomtom_od) 
 
-        if plot:
-            heatmaps(original_od, tomtom_od)  
+        
 
         print("START LINEAR REGRESSION\n")
         slopes_one_zone = []
         intercepts_one_zone = []
         loop = 0
         shapes = get_split_matrices(tomtom_od)
-
-        heatmaps(shapes[0], shapes[1])
+        if plot:
+            heatmaps(original_od, tomtom_od, zone, 'original', 'tomtom')  
+            heatmaps(shapes[0], shapes[1], 'split form zone {}'.format(zone), 'split 1', 'split 2')
 
         approx_matrix = np.zeros(tomtom_od.shape)
         for i  in range(len(shapes)):
@@ -85,6 +85,7 @@ def main():
         ax.set_title('Gaps for different zones before and after linear regression')
         ax.set_ylabel('normalized gap')
         ax.legend()
+        plt.savefig(str(pathlib.Path(__file__).parents[1])+'/graphsFromResults/gap_bar_chart.png')
 
         fig,ax2 = plt.subplots()
         x = np.linspace(0,10,300)
@@ -98,6 +99,7 @@ def main():
         ax2.set_ylabel("Y")
         ax2.set_xlabel("X")
         ax2.set_title('Linear equations from the different test zones + split matrices')
+        plt.savefig(str(pathlib.Path(__file__).parents[1])+'/graphsFromResults/linear_equations.png')
 
         plt.show()
 
