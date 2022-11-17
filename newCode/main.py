@@ -25,7 +25,7 @@ def main():
     intercepts = []
 
     plot = True
-    heatmap = False
+    heatmap = True
 
     tomtomData = {}
     originalData = {}
@@ -53,7 +53,7 @@ def main():
 
         if heatmap:
             heatmaps(original_od, tomtom_od, zone, 'original', 'tomtom')  
-            heatmaps(shapes[0], shapes[1], 'split form zone {}'.format(zone), 'split 1', 'split 2')
+            heatmaps(shapes[1], shapes[0], 'split form zone {}'.format(zone), 'split 1', 'split 2')
 
         approx_matrix = np.zeros(tomtom_od.shape)
         for i  in range(len(shapes)):
