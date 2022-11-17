@@ -14,6 +14,10 @@ np.set_printoptions(suppress=True)
 def main():
     zonings = ['ZoningSmallLeuven', 'BruggeWithoutZeeBrugge', 'Hasselt']
     moves = ['testCaseLeuven','BruggeWithoutZeeBrugge', 'Hasselt']
+        #amount of km road in the zone
+    road_coverage = [997.67,1069.56,1487.82]
+        #squared km 
+    area = [57.52,95.36,102.53]
 
     origGap = []
     approxGap = []
@@ -21,6 +25,12 @@ def main():
     intercepts = []
 
     plot = True
+    heatmap = False
+
+    tomtomData = {}
+    originalData = {}
+    shapes_dic = {}
+    approxOD = {}
 
     for zone, move in zip(zonings, moves):
         print("START SETUP FOR {}\n".format(move))
@@ -29,6 +39,9 @@ def main():
         original_od = normalize(original_od)
         tomtom_od = normalize(tomtom_od) 
 
+        tomtomData[move] = tomtom_od
+        originalData[move] = original_od
+        
         
 
         print("START LINEAR REGRESSION\n")
@@ -36,7 +49,9 @@ def main():
         intercepts_one_zone = []
         loop = 0
         shapes = get_split_matrices(tomtom_od)
-        if plot:
+        shapes_dic[move] = shapes
+
+        if heatmap:
             heatmaps(original_od, tomtom_od, zone, 'original', 'tomtom')  
             heatmaps(shapes[0], shapes[1], 'split form zone {}'.format(zone), 'split 1', 'split 2')
 
@@ -63,6 +78,7 @@ def main():
         origGap.append(original_gap)
         print('\noriginal gap = {}'.format(original_gap))
     
+        approxOD[move] = approx_matrix
         approx_gap = calculate_gap(original_od, approx_matrix)
         approxGap.append(approx_gap)
         print('second gap = {}'.format(approx_gap))
@@ -70,9 +86,66 @@ def main():
         slopes.append(slopes_one_zone)
         intercepts.append(intercepts_one_zone)
 
+    slopes_first_shape = [slope[0] for slope in slopes]
+    slopes_second_shape = [slope[1] for slope in slopes]
+
+
     if plot:
+       
+       #plot the bar plots
+        bars(origGap,approxGap, intercepts, moves)
+
+        #plot the equations
+        equations(slopes, intercepts, move)    
+
+        #plot the scatters (with their linear fit)
+        modelSlope, modelIntercept = scatters(slopes_first_shape ,area, road_coverage)
+        averageModelIntercept = np.average([i[0] for i in intercepts])
+        print("Model to build MOW: [({} * road_coverage + {}) * tomtom_od + {}] * number_of_trips".format(modelSlope, modelIntercept, averageModelIntercept))
+        string = "Model used: [({} * road_coverage + {}) * tomtom_od + {}] * number_of_trips".format(modelSlope, modelIntercept, averageModelIntercept)
+        approx_gap2 = []
+        for idx, move in enumerate(moves): 
+            newMatrix = (((modelSlope * road_coverage[idx]) + modelIntercept) * tomtomData[move])*shapes_dic[move][0] + approxOD[move]*shapes_dic[move][1]
+            approx_gap2.append(calculate_gap(originalData[move], newMatrix))
+
+        bars(origGap, approxGap, intercepts, moves, approx_gap2, string)
+        plt.show()
+
+
+#make scatter and plot the best linear fit
+def scatters(slopes,area, road_coverage):
+    x2 = np.linspace(min(area)-20,max(area)+20,1000)
+
+    _, ax3 = plt.subplots()
+    plt.scatter(area, slopes)
+    res = scipy.stats.linregress(area, slopes)
+    y3 = res.slope * x2 + res.intercept
+    plt.plot(x2,y3, label = "y = {} x + {}".format(res.slope, res.intercept))
+    ax3.legend()
+    ax3.set_ylabel("area")
+    ax3.set_xlabel("slope linear equation")
+    ax3.set_title('scatter plot between area and slope of the linear equation')
+    plt.savefig(str(pathlib.Path(__file__).parents[1])+'/graphsFromResults/scatter_area.png')
+
+    x3 = np.linspace(min(road_coverage)-20,max(road_coverage)+20,1000)
+    _, ax4 = plt.subplots()
+    plt.scatter(road_coverage, slopes)
+    res2 = scipy.stats.linregress(road_coverage, slopes)
+    y4 = res2.slope * x3 + res2.intercept
+    plt.plot(x3,y4, label = "y = {} x + {}".format(res2.slope, res2.intercept))
+    ax4.legend()
+    ax4.set_ylabel("road coverage")
+    ax4.set_xlabel("slope linear equation")
+    ax4.set_title('scatter plot between road coverage and slope of the linear equation')
+    plt.savefig(str(pathlib.Path(__file__).parents[1])+'/graphsFromResults/scatter_road_coverage.png')
+
+    return res2.slope, res2.intercept
+
+#make the bars
+def bars(origGap,approxGap,intercepts, moves, approxGapModel = [], string = ""):
+    if approxGapModel == []:
         #make some plots 
-        fig,ax = plt.subplots()
+        _,ax = plt.subplots()
 
         width = 0.3
         x_original = [x-width/2 for x in range(len(origGap))]
@@ -87,23 +160,47 @@ def main():
         ax.legend()
         plt.savefig(str(pathlib.Path(__file__).parents[1])+'/graphsFromResults/gap_bar_chart.png')
 
-        fig,ax2 = plt.subplots()
-        x = np.linspace(0,10,300)
-
-        for s, i , zone in zip(slopes, intercepts, move):
-            for k in range(len(s)):
-                y1 = s[k]*x + i[k]
-                ax2.plot(x,y1, label = 'Eq for {}th piece of {} od_reg'.format(k,zone))
-
-        ax2.legend()
-        ax2.set_ylabel("Y")
-        ax2.set_xlabel("X")
-        ax2.set_title('Linear equations from the different test zones + split matrices')
-        plt.savefig(str(pathlib.Path(__file__).parents[1])+'/graphsFromResults/linear_equations.png')
-
-        plt.show()
+        #plot a bar with the intercepts of the linear equations
+        intercept_needed = [i[0] for i in intercepts]
+        _, ax2 = plt.subplots()
+        ax2.bar(moves, intercept_needed, label = "intercepts of the linear equations")
+        ax2.set_title('intercepts of the linear equations (first shape)')
+        plt.savefig(str(pathlib.Path(__file__).parents[1])+'/graphsFromResults/intercept_bar.png')
+    else:
+        _,ax3 = plt.subplots()
+        width = 0.3
+        x_original = [x-width for x in range(len(origGap))]
+        x_approx = [x for x in range(len(approxGap))]
+        x_approx2 = [x+width for x in range(len(approxGapModel))]
 
 
+        ax3.bar(x_original, origGap, width, label = 'original Gap',color = 'darkslategray')
+        ax3.bar(x_approx, approxGap, width, label = 'approx Gap linear regression',color = 'crimson')
+        ax3.bar(x_approx2, approxGapModel, width, label = 'approx Gap own model', color = 'green')
+        
+        ax3.set_xticks(range(len(moves)), moves)
+        ax3.set_title('Original gap vs linear reg Gap vs Model gap')
+        ax3.set_ylabel('normalized gap')
+        ax3.set_xlabel(string)
+        ax3.legend()
+        plt.savefig(str(pathlib.Path(__file__).parents[1])+'/graphsFromResults/modelGap.png')
+
+
+#make the linear eq plots
+def equations(slopes, intercepts, move):
+    _,ax2 = plt.subplots()
+    x = np.linspace(0,10,300)
+
+    for s, i , zone in zip(slopes, intercepts, move):
+        for k in range(len(s)):
+            y1 = s[k]*x + i[k]
+            ax2.plot(x,y1, label = 'Eq for {}th piece of {} od_reg'.format(k,zone))
+
+    ax2.legend()
+    ax2.set_ylabel("Y")
+    ax2.set_xlabel("X")
+    ax2.set_title('Linear equations from the different test zones + split matrices')
+    plt.savefig(str(pathlib.Path(__file__).parents[1])+'/graphsFromResults/linear_equations.png')
 
 
 #This function sets up the test cases we work with (to start)
