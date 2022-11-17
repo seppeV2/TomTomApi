@@ -85,7 +85,7 @@ def list_to_matrix(list, shapeMatrix):
 #return the normalized matrix
 def normalize(matrix):
     print(np.sum(matrix))
-    return matrix/(sum(matrix))
+    return matrix/(np.sum(matrix))
 
 #split matrix in shapes according the values inside the matrix
 def get_split_matrices(matrix, slices: int = -1):

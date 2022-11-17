@@ -1,4 +1,4 @@
-from operational_functions import od_matrix_from_tomtom, calculate_gap,matrix_to_list, normalize, get_split_matrices, list_to_matrix
+from operational_functions import heatmaps, od_matrix_from_tomtom, calculate_gap,matrix_to_list, normalize, get_split_matrices, list_to_matrix
 import pathlib
 import pandas as pd 
 import geopandas as gpd
@@ -27,13 +27,19 @@ def main():
         original_od, tomtom_od = setup_test_case(zone, move)
             #normalize the matrices
         original_od = normalize(original_od)
-        tomtom_od = normalize(tomtom_od)    
+        tomtom_od = normalize(tomtom_od) 
+
+        if plot:
+            heatmaps(original_od, tomtom_od)  
 
         print("START LINEAR REGRESSION\n")
         slopes_one_zone = []
         intercepts_one_zone = []
         loop = 0
         shapes = get_split_matrices(tomtom_od)
+
+        heatmaps(shapes[0], shapes[1])
+
         approx_matrix = np.zeros(tomtom_od.shape)
         for i  in range(len(shapes)):
             #resize matrix to list to apply the linear regression
