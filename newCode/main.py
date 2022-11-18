@@ -1,4 +1,4 @@
-from operational_functions import heatmaps, od_matrix_from_tomtom, calculate_gap,matrix_to_list, normalize, get_split_matrices, list_to_matrix
+from operational_functions import heatmaps, outliers, od_matrix_from_tomtom, calculate_gap,matrix_to_list, normalize, get_split_matrices, list_to_matrix
 import pathlib
 import pandas as pd 
 import geopandas as gpd
@@ -35,9 +35,11 @@ def main():
     for zone, move in zip(zonings, moves):
         print("START SETUP FOR {}\n".format(move))
         original_od, tomtom_od = setup_test_case(zone, move)
-            #normalize the matrices
+        difference = original_od - tomtom_od
+        #normalize the matrices
         original_od = normalize(original_od)
         tomtom_od = normalize(tomtom_od) 
+        norm = normalize(difference)
 
         tomtomData[move] = tomtom_od
         originalData[move] = original_od
@@ -54,6 +56,7 @@ def main():
         if heatmap:
             heatmaps(original_od, tomtom_od, zone, 'original', 'tomtom')  
             heatmaps(shapes[1], shapes[0], 'split form zone {}'.format(zone), 'split 1', 'split 2')
+            outliers(norm, zone)
 
         approx_matrix = np.zeros(tomtom_od.shape)
         for i  in range(len(shapes)):

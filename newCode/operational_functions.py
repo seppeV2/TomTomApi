@@ -13,8 +13,13 @@ def heatmaps(matrix1, matrix2, zone, name1, name2):
     fig.suptitle(zone)
     sns.heatmap(matrix2, ax=ax[0]).set(title=name1)
     sns.heatmap(matrix1, ax=ax[1]).set(title=name2)
-    plt.savefig(str(pathlib.Path(__file__).parents[1])+'/graphsFromResults/heatmap_{}.png'.format(zone))
-
+    plt.savefig(str(pathlib.Path(__file__).parents[1])+'/graphsFromResults/heatmap_{}.png'.format(zone))    
+   
+def outliers(matrix, zone):
+    fig,ax = plt.subplots()
+    ax.set_title('Normalized difference {}'.format(zone))
+    sns.heatmap(matrix)
+    plt.savefig(str(pathlib.Path(__file__).parents[1])+'/graphsFromResults/outliers_{}.png'.format(zone))
 
 #function to make a np.array from the tomtom move csv file
 def od_matrix_from_tomtom(pathToFile, flow):
