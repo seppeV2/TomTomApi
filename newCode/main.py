@@ -100,13 +100,7 @@ def main():
 
         #plot the scatters (with their linear fit)
         modelSlope, modelIntercept = scatters(slopes_first_shape ,area, road_coverage)
-        averageModelIntercept = np.average([i[0] for i in intercepts])
-        print("Model to build MOW: [({} * road_coverage + {}) * tomtom_od + {}] * number_of_trips".format(modelSlope, modelIntercept, averageModelIntercept))
-        string = "Model used: [({} * road_coverage + {}) * tomtom_od + {}] * number_of_trips".format(modelSlope, modelIntercept, averageModelIntercept)
-        approx_gap2 = []
-        for idx, move in enumerate(moves): 
-            newMatrix = (((modelSlope * road_coverage[idx]) + modelIntercept) * tomtomData[move])*shapes_dic[move][0] + approxOD[move]*shapes_dic[move][1]
-            approx_gap2.append(calculate_gap(originalData[move], newMatrix))
+        approx_gap2, string = calculate_model(intercepts, modelSlope, modelIntercept, moves, road_coverage, tomtomData, shapes_dic, approxOD, originalData)
 
         bars(origGap, approxGap, intercepts, moves, approx_gap2, string)
         plt.show()
@@ -234,4 +228,15 @@ def setup_test_case(nameZoning: str, nameTomTomCsv: str):
     tomtom_od = np.round((tomtom_od / 5),3)
     return original_od, tomtom_od
 
+
+#functiont to calculate_model
+def calculate_model(intercepts, modelSlope, modelIntercept, moves, road_coverage, tomtomData, shapes_dic, approxOD, originalData):
+    averageModelIntercept = np.average([i[0] for i in intercepts])
+    print("Model to build MOW: [({} * road_coverage + {}) * tomtom_od + {}] * number_of_trips".format(modelSlope, modelIntercept, averageModelIntercept))
+    string = "Model used: [({} * road_coverage + {}) * tomtom_od + {}] * number_of_trips".format(modelSlope, modelIntercept, averageModelIntercept)
+    approx_gap2 = []
+    for idx, move in enumerate(moves): 
+        newMatrix = (((modelSlope * road_coverage[idx]) + modelIntercept) * tomtomData[move])*shapes_dic[move][0] + approxOD[move]*shapes_dic[move][1]
+        approx_gap2.append(calculate_gap(originalData[move], newMatrix))
+    return approx_gap2, string
 main()
