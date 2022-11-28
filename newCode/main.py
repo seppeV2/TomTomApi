@@ -13,7 +13,10 @@ np.set_printoptions(suppress=True)
 
 def main():
     zonings = ['ZoningSmallLeuven', 'BruggeWithoutZeeBrugge', 'Hasselt']
-    moves = ['testCaseLeuven','BruggeWithoutZeeBrugge', 'Hasselt']
+    #moves = ['testCaseLeuven','BruggeWithoutZeeBrugge', 'Hasselt']
+    moves = ['LeuvenExternal', 'BruggeExternal', 'HasseltExternal']
+
+
         #amount of km road in the zone
     road_coverage = [997.67,1069.56,1487.82]
         #squared km 
@@ -50,13 +53,13 @@ def main():
         slopes_one_zone = []
         intercepts_one_zone = []
         loop = 0
-        shapes = get_split_matrices(tomtom_od)
+        shapes = get_split_matrices(tomtom_od,1)
         shapes_dic[move] = shapes
 
         if heatmap:
             heatmaps(original_od, tomtom_od, zone, 'original', 'tomtom')  
-            heatmaps(shapes[1], shapes[0], 'split form zone {}'.format(zone), 'split 1', 'split 2')
-            outliers(norm, zone)
+            #heatmaps(shapes[1], shapes[0], 'split form zone {}'.format(zone), 'split 1', 'split 2')
+            #outliers(norm, zone)
 
         approx_matrix = np.zeros(tomtom_od.shape)
         for i  in range(len(shapes)):
@@ -90,7 +93,7 @@ def main():
         intercepts.append(intercepts_one_zone)
 
     slopes_first_shape = [slope[0] for slope in slopes]
-    slopes_second_shape = [slope[1] for slope in slopes]
+    #slopes_second_shape = [slope[1] for slope in slopes]
 
 
     if plot:
@@ -100,6 +103,7 @@ def main():
 
         #plot the equations
         equations(slopes, intercepts, move)    
+        plt.show()
 
         #plot the scatters (with their linear fit)
         modelSlope, modelIntercept = scatters(slopes_first_shape ,area, road_coverage)

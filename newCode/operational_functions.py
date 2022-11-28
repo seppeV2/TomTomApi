@@ -11,8 +11,8 @@ import seaborn as sns
 def heatmaps(matrix1, matrix2, zone, name1, name2):
     fig, ax = plt.subplots(1, 2)
     fig.suptitle(zone)
-    sns.heatmap(matrix2, ax=ax[0]).set(title=name1)
-    sns.heatmap(matrix1, ax=ax[1]).set(title=name2)
+    sns.heatmap(matrix2, ax=ax[0]).set(title=name2)
+    sns.heatmap(matrix1, ax=ax[1]).set(title=name1)
     plt.savefig(str(pathlib.Path(__file__).parents[1])+'/graphsFromResults/heatmap_{}.png'.format(zone))    
    
 def outliers(matrix, zone):
@@ -35,7 +35,7 @@ def od_matrix_from_tomtom(pathToFile, flow):
             if j != i:
                 od_matrix[i][j] += int(result[flow][i*size+j])
 
-    return od_matrix
+    return od_matrix[0:size-1,0:size-1]
 
 #function to find the coef where the squared error is the least significant
 def find_optimal_coef(array1,array2):
@@ -109,6 +109,8 @@ def get_split_matrices(matrix, slices: int = -1):
             shapes.append(shape)
         return shapes
     #split matrix in two slices (before and after average)
+    elif slices == 1:
+        return np.full((len(matrix), len(matrix)), 1)
     else: 
         shape1 = np.zeros(matrix.shape)
         shape2 = np.zeros(matrix.shape)
