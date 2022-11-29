@@ -3,6 +3,7 @@ newCode/data/Verplaatsingen_bestuurder_uur_spmVlaanderenVersie4.2.2_2017.CSV
 mow-demand-extractor/
 */.DS_Store
 newCode/test.py
+newCode/data/statbel/KULZoning_maped_on_StatisticalZoning.zip
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
