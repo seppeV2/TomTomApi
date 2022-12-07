@@ -3,6 +3,7 @@ import pandas as pd
 import geopandas as gpd
 import pathlib
 from math import isnan
+import numpy as np
 
 
 """ def get_od_matrix_from_database():
@@ -78,6 +79,22 @@ def build_dic_zones_extra_info(extraInfoName, zoneName, infoName):
 
     result = pd.DataFrame.from_dict(store,orient='index')
     result.to_csv(str(pathlib.Path(__file__).parent)+'/data/statbel/{}_{}_{}_dictionary.csv'.format(extraInfoName, infoName, zoneName))
+
+def create_OD_from_info(fileName, mergeWay= 'sum'):
+    dataHead = ['zoneName', 'amount']
+    data = pd.read_csv(str(pathlib.Path(__file__).parent)+'/data/statbel/{}.csv'.format(fileName), names = dataHead)
+    OD = np.zeros((len(data),len(data)))
+    for i in range(len(data)):
+        for j in range(len(data)):
+            if i != j:
+                if mergeWay == 'sum':
+                    OD[i,j] += data['amount'][i] + data['amount'][j]
+                elif mergeWay == 'average':
+                    OD[i,j] += (data['amount'][i] + data['amount'][j])/2
+    return OD
+
+
+
 
 """ zonings = ['ZoningSmallLeuven', 'BruggeWithoutZeeBrugge', 'Hasselt']
 info = ['households_cars_statsec_2021','households_cars_statsec_2021', 'population_per_stasec']

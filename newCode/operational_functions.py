@@ -8,13 +8,22 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 
-def heatmaps(matrix1, matrix2, zone, name1, name2):
+def heatmaps(matrix1, matrix2, zone, name1, name2, path):
     fig, ax = plt.subplots(1, 2)
     fig.suptitle(zone)
     sns.heatmap(matrix2, ax=ax[0]).set(title=name2)
     sns.heatmap(matrix1, ax=ax[1]).set(title=name1)
-    plt.savefig(str(pathlib.Path(__file__).parents[1])+'/graphsFromResults/heatmap_{}.png'.format(zone))    
+    plt.savefig(path+'/heatmap_{}.png'.format(zone))    
    
+def visualize_splits(shapes, zone, path):
+    amount_shapes = len(shapes)
+    fig, ax = plt.subplots(1,amount_shapes)
+    fig.suptitle(zone)
+    for idx, shape in enumerate(shapes):
+        sns.heatmap(shape,ax=ax[idx]).set(title='shape_{}'.format(idx+1))
+    plt.savefig(path+'/visual_shapes_{}.png'.format(zone))  
+
+
 def outliers(matrix, zone):
     fig,ax = plt.subplots()
     ax.set_title('Normalized difference {}'.format(zone))
@@ -90,16 +99,22 @@ def list_to_matrix(list, shapeMatrix):
 
 #return the normalized matrix
 def normalize(matrix):
-    return matrix/(np.sum(matrix))
+    return matrix/(np.sum(matrix)), np.sum(matrix)
 
 #split matrix in shapes according the values inside the matrix
-def get_split_matrices(matrix, slices: int = -1):
+def get_split_matrices(matrix, slices: int = -1, cutoffs = []):
     #split matrices in x slices between min (0) and max values
     if slices != -1:
         shapes = []
         prev = -1
         for k in range(slices):
-            next = np.max(matrix)*((k+1)/slices)
+            if cutoffs == []:
+                next = np.max(matrix)*((k+1)/slices)
+            else:
+                if k == slices-1:
+                    next = np.max(matrix)+1
+                else:
+                    next = cutoffs[k]
             shape = np.zeros(matrix.shape)
             for i in range(len(matrix)):
                 for j in range(len(matrix)):

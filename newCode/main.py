@@ -1,116 +1,128 @@
-from operational_functions import heatmaps, outliers, od_matrix_from_tomtom, calculate_gap,matrix_to_list, normalize, get_split_matrices, list_to_matrix
+from operational_functions import heatmaps, outliers, od_matrix_from_tomtom, calculate_gap,matrix_to_list, normalize, get_split_matrices, list_to_matrix, visualize_splits
 import pathlib
 import pandas as pd 
 import geopandas as gpd
 from dyntapy.demand_data import od_matrix_from_dataframes
 import numpy as np
 import scipy
+from otherFunctions import create_OD_from_info
 from sklearn.linear_model import LinearRegression
 import matplotlib.pyplot as plt
+import os
 from matplotlib.container import BarContainer
 np.set_printoptions(suppress=True)
 
 
 def main():
     zonings = ['ZoningSmallLeuven', 'BruggeWithoutZeeBrugge', 'Hasselt']
-    #moves = ['testCaseLeuven','BruggeWithoutZeeBrugge', 'Hasselt']
     moves = ['LeuvenExternal', 'BruggeExternal', 'HasseltExternal']
-
+    cluster_ways = ['population_per_stasec_TOTAL', 'households_cars_statsec_2021_total_huisH', 'households_cars_statsec_2021_total_wagens']
+    methods = ['sum']#, 'average']
 
         #amount of km road in the zone
     road_coverage = [997.67,1069.56,1487.82]
         #squared km 
     area = [57.52,95.36,102.53]
-
-    origGap = []
-    approxGap = []
-    slopes = []
-    intercepts = []
-
-    plot = True
-    heatmap = True
-
-    tomtomData = {}
-    originalData = {}
-    shapes_dic = {}
-    approxOD = {}
-
-    for zone, move in zip(zonings, moves):
-        print("START SETUP FOR {}\n".format(move))
-        original_od, tomtom_od = setup_test_case(zone, move)
-        difference = original_od - tomtom_od
-        #normalize the matrices
-        original_od = normalize(original_od)
-        tomtom_od = normalize(tomtom_od) 
-        norm = normalize(difference)
-
-        tomtomData[move] = tomtom_od
-        originalData[move] = original_od
-        
-        
-
-        print("START LINEAR REGRESSION\n")
-        slopes_one_zone = []
-        intercepts_one_zone = []
-        loop = 0
-        shapes = get_split_matrices(tomtom_od,1)
-        shapes_dic[move] = shapes
-
-        if heatmap:
-            heatmaps(original_od, tomtom_od, zone, 'original', 'tomtom')  
-            #heatmaps(shapes[1], shapes[0], 'split form zone {}'.format(zone), 'split 1', 'split 2')
-            #outliers(norm, zone)
-
-        approx_matrix = np.zeros(tomtom_od.shape)
-        for i  in range(len(shapes)):
-            #resize matrix to list to apply the linear regression
-            tomtom_list = matrix_to_list(tomtom_od, shapes[i])
-            original_list = matrix_to_list(original_od, shapes[i])
-
-            #actual linear regression
-            res = scipy.stats.linregress(tomtom_list, original_list)
-            slopes_one_zone.append(res.slope)
-            intercepts_one_zone.append(res.intercept)
-            print("The regression for split {}: Y = {} * X + {} ".format(loop, res.slope, res.intercept))
-
-            #reconstruct the matrix after applying the linear regression
-                #apply linear regression 
-            intermediate_list = (tomtom_list * res.slope) + res.intercept
-            intermediate_array = list_to_matrix(intermediate_list, shapes[i])
-            approx_matrix += intermediate_array
-            loop += 1 
-
-        original_gap = calculate_gap(original_od, tomtom_od)
-        origGap.append(original_gap)
-        print('\noriginal gap = {}'.format(original_gap))
+    #cutoffValues = {cluster_ways[0]:[5000,10000]}
     
-        approxOD[move] = approx_matrix
-        approx_gap = calculate_gap(original_od, approx_matrix)
-        approxGap.append(approx_gap)
-        print('second gap = {}'.format(approx_gap))
 
-        slopes.append(slopes_one_zone)
-        intercepts.append(intercepts_one_zone)
+    for cluster_way in cluster_ways:
+        for method in methods:
+            origGap = []
+            approxGap = []
+            slopes = []
+            intercepts = []
 
-    slopes_first_shape = [slope[0] for slope in slopes]
-    #slopes_second_shape = [slope[1] for slope in slopes]
+            plot = True
+            heatmap = True
+
+            tomtomData = {}
+            originalData = {}
+            shapes_dic = {}
+            approxOD = {}
+            for zone, move in zip(zonings, moves):
+
+                path = str(pathlib.Path(__file__).parents[1])+'/graphsFromResults/{}/{}'.format(cluster_way, method)
+                path1 = str(pathlib.Path(__file__).parents[1])+'/graphsFromResults/{}/{}/{}'.format(cluster_way, method, zone)
+
+                os.makedirs(path1, exist_ok=True)
+                print("START SETUP FOR {}\n".format(move))
+                original_od, tomtom_od = setup_test_case(zone, move)
+                difference = original_od - tomtom_od
+                #normalize the matrices
+                original_od, ori_norm = normalize(original_od)
+                tomtom_od,tom_norm= normalize(tomtom_od) 
+                norm,_ = normalize(difference)
+
+                #norm_fact = ori_norm/tom_norm
+
+                tomtomData[move] = tomtom_od
+                originalData[move] = original_od
+                
+                cluster_matrix = create_OD_from_info(cluster_way+'_'+zone+'_dictionary', method)
+                shapes = get_split_matrices(cluster_matrix,3)
+                shapes_dic[move] = shapes
+
+                print("START LINEAR REGRESSION\n")
+                slopes_one_zone = []
+                intercepts_one_zone = []
+                loop = 0
+                
+
+                if heatmap:
+                    heatmaps(original_od, tomtom_od, zone, 'original', 'tomtom', path1)  
+                    visualize_splits(shapes, zone ,path1)
+                    #outliers(norm, zone)
+
+                approx_matrix = np.zeros(tomtom_od.shape)
+                for i  in range(len(shapes)):
+                    if np.sum(shapes[i]) == 0:
+                        slopes_one_zone.append(0)
+                        intercepts_one_zone.append(0)
+                    else:
+                        #resize matrix to list to apply the linear regression
+                        tomtom_list = matrix_to_list(tomtom_od, shapes[i])
+                        original_list = matrix_to_list(original_od, shapes[i])
+
+                        #actual linear regression
+                        res = scipy.stats.linregress(tomtom_list, original_list)
+                        slopes_one_zone.append(res.slope)
+                        intercepts_one_zone.append(res.intercept)
+                        print("The regression for split {}: Y = {} * X + {} ".format(loop, res.slope, res.intercept))
+
+                        #reconstruct the matrix after applying the linear regression
+                            #apply linear regression 
+                        intermediate_list = (tomtom_list * res.slope) + res.intercept
+                        intermediate_array = list_to_matrix(intermediate_list, shapes[i])
+                        approx_matrix += intermediate_array
+                        loop += 1 
+
+                original_gap = calculate_gap(original_od, tomtom_od)
+                origGap.append(original_gap)
+                print('\noriginal gap = {}'.format(original_gap))
+            
+                approxOD[move] = approx_matrix
+                approx_gap = calculate_gap(original_od, approx_matrix)
+                approxGap.append(approx_gap)
+                print('second gap = {}'.format(approx_gap))
+
+                slopes.append(slopes_one_zone)
+                intercepts.append(intercepts_one_zone)
 
 
-    if plot:
-       
-       #plot the bar plots
-        bars(origGap,approxGap, intercepts, moves)
 
-        #plot the equations
-        equations(slopes, intercepts, move)    
-        plt.show()
+            if plot:
+            
+            #plot the bar plots
+                bars(origGap,approxGap, intercepts, moves, path)
 
-        #plot the scatters (with their linear fit)
-        modelSlope, modelIntercept = scatters(slopes_first_shape ,area, road_coverage)
-        approx_gap2, string = calculate_model(intercepts, modelSlope, modelIntercept, moves, road_coverage, tomtomData, shapes_dic, approxOD, originalData)
+                #plot the equations
+                equations(slopes, intercepts, move, path)    
+                
 
-        bars(origGap, approxGap, intercepts, moves, approx_gap2, string)
-        plt.show()
+                #plot the scatters (with their linear fit)
+                #modelSlope, modelIntercept = scatters(slopes_first_shape ,area, road_coverage)
+                #approx_gap2, string = calculate_model(intercepts, modelSlope, modelIntercept, moves, road_coverage, tomtomData, shapes_dic, approxOD, originalData)
 
 
 #make scatter and plot the best linear fit
@@ -143,7 +155,7 @@ def scatters(slopes,area, road_coverage):
     return res2.slope, res2.intercept
 
 #make the bars
-def bars(origGap,approxGap,intercepts, moves, approxGapModel = [], string = ""):
+def bars(origGap,approxGap,intercepts, moves, path, approxGapModel = [], string = ""):
     if approxGapModel == []:
         #make some plots 
         _,ax = plt.subplots()
@@ -159,14 +171,14 @@ def bars(origGap,approxGap,intercepts, moves, approxGapModel = [], string = ""):
         ax.set_title('Gaps for different zones before and after linear regression')
         ax.set_ylabel('normalized gap')
         ax.legend()
-        plt.savefig(str(pathlib.Path(__file__).parents[1])+'/graphsFromResults/gap_bar_chart.png')
-
-        #plot a bar with the intercepts of the linear equations
-        intercept_needed = [i[0] for i in intercepts]
-        _, ax2 = plt.subplots()
-        ax2.bar(moves, intercept_needed, label = "intercepts of the linear equations")
-        ax2.set_title('intercepts of the linear equations (first shape)')
-        plt.savefig(str(pathlib.Path(__file__).parents[1])+'/graphsFromResults/intercept_bar.png')
+        plt.savefig(path+'/gap_bar_chart.png')
+        for i in range(len(intercepts[0])):
+            #plot a bar with the intercepts of the linear equations
+            intercept_needed = [j[i] for j in intercepts]
+            _, ax2 = plt.subplots()
+            ax2.bar(moves, intercept_needed, label = "intercepts of the linear equations")
+            ax2.set_title('intercepts of the linear equations ({}th shape)'.format(i+1))
+            plt.savefig(path+'/intercept_bar_{}th.png'.format(i+1))
     else:
         _,ax3 = plt.subplots()
         width = 0.3
@@ -184,24 +196,25 @@ def bars(origGap,approxGap,intercepts, moves, approxGapModel = [], string = ""):
         ax3.set_ylabel('normalized gap')
         ax3.set_xlabel(string)
         ax3.legend()
-        plt.savefig(str(pathlib.Path(__file__).parents[1])+'/graphsFromResults/modelGap.png')
+        plt.savefig(path+'/modelGap.png')
 
 
 #make the linear eq plots
-def equations(slopes, intercepts, move):
-    _,ax2 = plt.subplots()
+def equations(slopes, intercepts, move, path):
     x = np.linspace(0,10,300)
+    for i in range(len(slopes[0])):
+        _,ax = plt.subplots()
+        for j in range(len(slopes)):
+            y1 = slopes[j][i]*x + intercepts[j][i]
+            ax.plot(x,y1, label = 'Eq for {}th split of OD {}'.format(i+1,move[j]))
+        ax.legend()
+        ax.set_ylabel("Y")
+        ax.set_xlabel("X")
+        ax.set_title('Linear equations from the {}th split of the matrix'.format(i+1))
+        plt.savefig(path+'/linear_equations_split_{}.png'.format(i+1))
+    
 
-    for s, i , zone in zip(slopes, intercepts, move):
-        for k in range(len(s)):
-            y1 = s[k]*x + i[k]
-            ax2.plot(x,y1, label = 'Eq for {}th piece of {} od_reg'.format(k,zone))
 
-    ax2.legend()
-    ax2.set_ylabel("Y")
-    ax2.set_xlabel("X")
-    ax2.set_title('Linear equations from the different test zones + split matrices')
-    plt.savefig(str(pathlib.Path(__file__).parents[1])+'/graphsFromResults/linear_equations.png')
 
 
 #This function sets up the test cases we work with (to start)
