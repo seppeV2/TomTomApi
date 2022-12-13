@@ -3,19 +3,28 @@ import pathlib
 import numpy as np
 import pandas as pd
 from sympy import *
-from scipy.optimize import minimize 
+from scipy.stats import linregress 
 import matplotlib.pyplot as plt
 import seaborn as sns
 from dyntapy.demand_data import od_matrix_from_dataframes
 import geopandas as gpd
+import os
+from sklearn.linear_model import LinearRegression
 
 
-def heatmaps(matrix1, matrix2, zone, name1, name2, path):
+def heatmaps(matrix1, matrix2, zone, name1, name2, addiTitle='' , fileName='', path = ''):
     fig, ax = plt.subplots(1, 2)
-    fig.suptitle(zone)
+    fig.suptitle('{} {}'.format(zone, addiTitle))
     sns.heatmap(matrix2, ax=ax[0]).set(title=name2)
     sns.heatmap(matrix1, ax=ax[1]).set(title=name1)
-    plt.savefig(path+'/heatmap_{}.png'.format(zone))    
+    if path == '':
+        path = str(pathlib.Path(__file__).parents[1])+'/graphsFromResults/general_info/heatmaps'
+        os.makedirs(path, exist_ok=True)
+    if fileName != '':
+        plt.savefig(path+'/heatmap_{}.png'.format(fileName))
+    else: 
+        plt.savefig(path+'/heatmap_{}.png'.format(zone))
+    plt.close()
    
 def visualize_splits(shapes, zone, path):
     amount_shapes = len(shapes)
@@ -32,7 +41,7 @@ def outliers(matrix, zone):
     sns.heatmap(matrix)
     plt.savefig(str(pathlib.Path(__file__).parents[1])+'/graphsFromResults/outliers_{}.png'.format(zone))
 
-#function to make a np.array from the tomtom move csv file
+# function to make a np.array from the tomtom move csv file
 def od_matrix_from_tomtom(pathToFile, flow):
     #read the csv file in as panda dataframe
     result = pd.read_csv(pathToFile)
@@ -48,7 +57,7 @@ def od_matrix_from_tomtom(pathToFile, flow):
 
     return od_matrix[0:size-1,0:size-1]
 
-#function to find the coef where the squared error is the least significant
+# function to find the coef where the squared error is the least significant
 def find_optimal_coef(array1,array2):
     
     X = Symbol('X')
@@ -72,12 +81,12 @@ def calculate_gap(matrix1, matrix2):
     
     return gap
 
-#function to make a list form the matrix 
-    #input = squared matrix and optional the shape matrix (so only relevant elements in the list)
-    #returns the list  
+# function to make a list form the matrix 
+    # input = squared matrix and optional the shape matrix (so only relevant elements in the list)
+    # returns the list  
 def matrix_to_list(matrix, shape = []):
     if shape == []:
-        return matrix.reshape([1,len(matrix)**2])
+        return np.array(matrix.reshape([len(matrix)**2,]))
     else:
         list = []
         for i in range(len(shape)):
@@ -86,24 +95,28 @@ def matrix_to_list(matrix, shape = []):
                     list.append(matrix[i,j])
         return np.array(list)
 
-#function to make a matrix from the list
-    #input = list (made of squared matrix) + shape matrix (only put back the relevant elements)
-    #return = resized matrix
-def list_to_matrix(list, shapeMatrix):
-    matrix  = np.zeros(shapeMatrix.shape)
-    counter = 0
-    for i in range(len(matrix)):
-        for j in range(len(matrix)):
-            if shapeMatrix[i,j] == 1:
-                matrix[i,j] += list[counter]
-                counter+=1
-    return matrix
+# function to make a matrix from the list
+    # input = list (made of squared matrix) + shape matrix (only put back the relevant elements)
+    # return = resized matrix
+def list_to_matrix(list, shapeMatrix=[]):
+    if shapeMatrix != []:
+        matrix  = np.zeros(shapeMatrix.shape)
+        counter = 0
+        for i in range(len(matrix)):
+            for j in range(len(matrix)):
+                if shapeMatrix[i,j] == 1:
+                    matrix[i,j] += list[counter]
+                    counter+=1
+        return matrix
+    else:
+        list_bis = np.array(list)
+        return list_bis.reshape([sqrt(len(list)), sqrt(len(list))])
 
-#return the normalized matrix
+# return the normalized matrix
 def normalize(matrix):
     return matrix/(np.sum(matrix)), np.sum(matrix)
 
-#split matrix in shapes according the values inside the matrix
+# split matrix in shapes according the values inside the matrix
 def get_split_matrices(matrix, slices: int = -1, cutoffs = []):
     #split matrices in x slices between min (0) and max values
     if slices != -1:
@@ -140,8 +153,8 @@ def get_split_matrices(matrix, slices: int = -1, cutoffs = []):
                     shape2[i,j] = 1 
         return [shape1, shape2]
 
-#This function sets up the test cases we work with (to start)
-#   An average work day flow is taken from the morning peak hour (7 am to 9 am)
+# This function sets up the test cases we work with (to start)
+# An average work day flow is taken from the morning peak hour (7 am to 9 am)
 def setup_test_case(nameZoning: str, nameTomTomCsv: str):
     #first retrieve the original od matrix
     #get the right parameters
@@ -172,6 +185,16 @@ def setup_test_case(nameZoning: str, nameTomTomCsv: str):
     return original_od, tomtom_od
 
 
+# function to calculate the gap between two matrices (of the same shape)
+# In this case we use RMSE to find that gap between every OD pair
+# Sum of all these together form the gap.
+def calculate_gap_RMSE(matrix1, matrix2):
+    gap = 0
+    for i in range(len(matrix1)):
+        for j in range(len(matrix1)):
+            # we don't care about the intra zonal traffic
+            if i != j:
+                gap += sqrt((matrix1[i, j] - matrix2[i, j])**2)
+    return gap
 
-    
 

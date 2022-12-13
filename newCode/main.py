@@ -16,7 +16,7 @@ def main():
     zonings = ['ZoningSmallLeuven', 'BruggeWithoutZeeBrugge', 'Hasselt']
     moves = ['LeuvenExternal', 'BruggeExternal', 'HasseltExternal']
     cluster_ways = ['population_per_stasec_TOTAL', 'households_cars_statsec_2021_total_huisH', 'households_cars_statsec_2021_total_wagens']
-    methods = ['sum']#, 'average']
+    methods = ['sum']
 
         #amount of km road in the zone
     road_coverage = [997.67,1069.56,1487.82]

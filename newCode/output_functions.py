@@ -1,10 +1,38 @@
 from operational_functions import heatmaps, outliers, od_matrix_from_tomtom, calculate_gap,matrix_to_list, normalize, get_split_matrices, list_to_matrix, visualize_splits
+from data_processing_properties import create_OD_from_info
 import numpy as np
 import scipy
 import pandas as pd 
 import pathlib
 import matplotlib.pyplot as plt
+import os
+from scipy.stats import pearsonr
 
+# function to make heatmaps between the diff of the original matrix and the tomtom matrix
+# and the property matrix with it's method of merging the property (OD) eg 'sum'
+# the results are stored in a folder, the pearson correlation factor is displayed on the graphs as well.
+def correlation_analyses(original_od, tomtom_od, network_property, zone, method ):
+    residua = np.subtract(original_od, tomtom_od)
+    path0 = str(pathlib.Path(__file__).parents[1])+'/graphsFromResults/Correlation_analyses/absolute/{}/{}'.format(method,zone)
+    path1 = str(pathlib.Path(__file__).parents[1])+'/graphsFromResults/Correlation_analyses/normalized/{}/{}'.format(method,zone)
+    os.makedirs(path0, exist_ok=True)
+    os.makedirs(path1, exist_ok=True)
+    property_matrix = create_OD_from_info(network_property+'_'+zone+'_dictionary', method)
+    correlation, _ = pearsonr(matrix_to_list(residua), matrix_to_list(property_matrix))
+    heatmaps(residua, property_matrix, zone, 'Residu Matrix', network_property, 'pearson correlation factor = {}'.format(round(np.average(correlation),3)), network_property, path0)
+    heatmaps(residua/np.max(residua), property_matrix/(np.max(property_matrix)), zone, 'Residu Matrix', network_property, 'pearson correlation factor = {}, (normalized)'.format(round(np.average(correlation),3)), network_property, path1)
+    fig,_ = plt.subplots(1,1)
+    fig.suptitle('Scatter residu vs {}'.format(network_property))
+    plt.scatter(matrix_to_list(residua),matrix_to_list(property_matrix))
+    plt.savefig(path0+'/scatter_residu_vs_{}'.format(network_property))
+    plt.close()
+
+    fig,_ = plt.subplots(1,1)
+    fig.suptitle('Scatter residu vs {} (normalized)'.format(network_property))
+    plt.scatter(matrix_to_list(residua)/np.max(matrix_to_list(residua)),matrix_to_list(property_matrix)/np.max(matrix_to_list(property_matrix)))
+    plt.savefig(path1+'/scatter_residu_vs_{}'.format(network_property))
+    plt.close()
+   
 #functiont to calculate_model
 def calculate_model(intercepts, modelSlope, modelIntercept, moves, road_coverage, tomtomData, shapes_dic, approxOD, originalData):
     averageModelIntercept = np.average([i[0] for i in intercepts])
@@ -15,8 +43,6 @@ def calculate_model(intercepts, modelSlope, modelIntercept, moves, road_coverage
         newMatrix = (((modelSlope * road_coverage[idx]) + modelIntercept) * tomtomData[move])*shapes_dic[move][0] + approxOD[move]*shapes_dic[move][1]
         approx_gap2.append(calculate_gap(originalData[move], newMatrix))
     return approx_gap2, string
-
-
 
 #make the linear eq plots
 def equations(slopes, intercepts, move, path):
@@ -31,7 +57,77 @@ def equations(slopes, intercepts, move, path):
         ax.set_xlabel("X")
         ax.set_title('Linear equations from the {}th split of the matrix'.format(i+1))
         plt.savefig(path+'/linear_equations_split_{}.png'.format(i+1))
-    
+
+# this function makes a plot of the gaps between 
+def gap_bars(gaps, moves, properties):
+    for property in properties:
+        path = str(pathlib.Path(__file__).parents[1])+'/graphsFromResults/general_info/{}/'.format(property)
+        os.makedirs(path, exist_ok=True)
+
+        # color of the bars
+        colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
+        orig_gap = np.array([gaps[property][move][0][0] for move in moves])
+        # width of the bar
+        width = 0.15
+        
+        if len(gaps[property][moves[0]])%2 == 1:
+            # uneven
+            start = -(len(gaps[property][moves[0]])//2) * width
+        else:
+            # even
+            start = -(len(gaps[property][moves[0]])//2 + 0.5) * width
+
+        offset = [start + x * width for x in range(len(gaps[property][moves[0]]))]
+        x_original = [x+offset[0] for x in range(len(moves))]
+
+        _,ax1 = plt.subplots()
+
+        ax1.bar(x_original, orig_gap, width, label = 'Original', color = colors[0])
+
+        for i  in range(1,len(gaps[property][moves[0]])):
+            gap_list = []
+            for idx, move in enumerate(moves):
+                (gap, legend) = gaps[property][move][i]
+                legend_string = legend
+                gap_list.append(gap)    
+            x_gap = [x+offset[i] for x in range(len(gap_list))]
+            ax1.bar(x_gap, gap_list, width, label = legend_string,color = colors[i])
+        
+        ax1.set_xticks(range(len(moves)), moves)
+        ax1.set_title('Bar charts of the absolute gaps from the different zones.')
+        ax1.set_ylabel('Absolute gap')
+        ax1.legend(bbox_to_anchor=(1.05, 1.0), loc='upper left',prop={'size': 6})
+        plt.tight_layout()
+        plt.savefig(path+'gap_bar_absolute.png')
+        plt.close()
+
+        #do the same for the normalized gaps
+        orig_norm_gap = np.full(orig_gap.shape, 1)
+        x_original = [x+offset[0] for x in range(len(orig_gap))]
+
+        _,ax2 = plt.subplots()
+        ax2.bar(x_original, orig_norm_gap, width, label = 'Original', color = colors[0])
+
+        for i in range(1,len(gaps[property][moves[0]])):
+            norm_gap_list = []
+            legend_string = ""
+            for idx, move in enumerate(moves):
+                (gap, legend) = gaps[property][move][i]
+                legend_string = legend
+                norm_gap_list.append(gap/orig_gap[idx])   
+            x_gap = [x+offset[i] for x in range(len(norm_gap_list))]
+            ax2.bar(x_gap, norm_gap_list, width, label = legend,color = colors[i])
+
+        ax2.set_xticks(range(len(moves)), moves)
+        ax2.set_title('Bar charts of the normalized gaps from the different zones.')
+        ax2.set_ylabel('Normalized gap')
+        ax2.legend(bbox_to_anchor=(1.05, 1.0), loc='upper left',prop={'size': 6})
+        plt.tight_layout()        
+        plt.savefig(path+'gap_bar_normalized.png')
+        plt.close()
+        
+        
+
 #make the bars
 def bars(origGap,approxGap,intercepts, moves, path, approxGapModel = [], string = ""):
     if approxGapModel == []:
