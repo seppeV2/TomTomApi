@@ -24,12 +24,16 @@ def correlation_analyses(original_od, tomtom_od, network_property, zone, method 
     fig,_ = plt.subplots(1,1)
     fig.suptitle('Scatter residu vs {}'.format(network_property))
     plt.scatter(matrix_to_list(residua),matrix_to_list(property_matrix))
+    plt.ylabel('{}'.format(network_property))
+    plt.xlabel('Residu')
     plt.savefig(path0+'/scatter_residu_vs_{}'.format(network_property))
     plt.close()
 
     fig,_ = plt.subplots(1,1)
     fig.suptitle('Scatter residu vs {} (normalized)'.format(network_property))
     plt.scatter(matrix_to_list(residua)/np.max(matrix_to_list(residua)),matrix_to_list(property_matrix)/np.max(matrix_to_list(property_matrix)))
+    plt.ylabel('Normalized {}'.format(network_property))
+    plt.xlabel('Normalized Residu')
     plt.savefig(path1+'/scatter_residu_vs_{}'.format(network_property))
     plt.close()
    
@@ -57,6 +61,79 @@ def equations(slopes, intercepts, move, path):
         ax.set_xlabel("X")
         ax.set_title('Linear equations from the {}th split of the matrix'.format(i+1))
         plt.savefig(path+'/linear_equations_split_{}.png'.format(i+1))
+
+def gap_bars_sum(gaps, moves, properties):
+
+    path = str(pathlib.Path(__file__).parents[1])+'/graphsFromResults/general_info/sum_specific_gaps/'
+    os.makedirs(path, exist_ok=True)
+
+    amount_of_bars = len(gaps) + 2
+
+    # color of the bars
+    colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
+    orig_gap = np.array([gaps[properties[0]][move][0][0] for move in moves])
+    # width of the bar
+    width = 0.15
+    
+    if amount_of_bars%2 == 1:
+        # uneven
+        start = -(amount_of_bars//2) * width
+    else:
+        # even
+        start = -(amount_of_bars//2 + 0.5) * width
+
+    offset = [start + x * width for x in range(amount_of_bars)]
+    x_original = [x+offset[0] for x in range(len(moves))]
+
+    simp_gap = np.array([gaps[properties[0]][move][1][0] for move in moves])
+    x_simp = [x+offset[1] for x in range(len(moves))]
+
+    _,ax1 = plt.subplots()
+    ax1.bar(x_original, orig_gap, width, label = 'Original', color = colors[0])
+    ax1.bar(x_simp, simp_gap, width, label = 'simple Reg', color = colors[1])
+
+    # Only save the third element (as that is the sum)
+    for idx, property in enumerate(properties): 
+        gaps_list = []
+        for move in moves:
+            (gap, legend) = gaps[property][move][2]
+            gaps_list.append(gap)
+        x_gap = [x+offset[idx+2] for x in range(len(moves))]
+        ax1.bar(x_gap, gaps_list ,width, label = legend, color = colors[idx+2])
+
+    ax1.set_xticks(range(len(moves)), moves)
+    ax1.set_title('Bars absolute gap per zone.')
+    ax1.set_ylabel('Absolute gap')
+    ax1.legend(bbox_to_anchor=(1.05, 1.0), loc='upper left',prop={'size': 6})
+    plt.tight_layout()
+    plt.savefig(path+'gap_bar_absolute_sum.png')
+    plt.close()
+
+    orig_norm_gap = np.full(orig_gap.shape, 1)
+    simp_gap_norm = np.array([gaps[properties[0]][move][1][0]/orig_gap[idx] for idx, move in enumerate(moves)])
+
+    _,ax1 = plt.subplots()
+    ax1.bar(x_original, orig_norm_gap, width, label = 'Original', color = colors[0])
+    ax1.bar(x_simp, simp_gap_norm, width, label = 'simple Reg', color = colors[1])
+
+    # Only save the third element (as that is the sum)
+    for idx, property in enumerate(properties): 
+        gaps_list = []
+        for i, move in enumerate(moves):
+            (gap, legend) = gaps[property][move][2]
+            gaps_list.append(gap/orig_gap[i])
+        x_gap = [x+offset[idx+2] for x in range(len(moves))]
+        ax1.bar(x_gap, gaps_list, width, label = legend, color = colors[idx+2])
+
+    ax1.set_xticks(range(len(moves)), moves)
+    ax1.set_title('Bars normalized gap per zone.')
+    ax1.set_ylabel('Normalized gap')
+    ax1.legend(bbox_to_anchor=(1.05, 1.0), loc='upper left',prop={'size': 6})
+    plt.tight_layout()
+    plt.savefig(path+'gap_bar_normalized_sum.png')
+    plt.close()
+
+
 
 # this function makes a plot of the gaps between 
 def gap_bars(gaps, moves, properties):
@@ -201,3 +278,11 @@ def scatters(slopes,area, road_coverage):
 
     return res2.slope, res2.intercept
 
+
+def compare_with_splits(shapes, origin_od, tomtom_od, network_property, zone):
+    residua = origin_od - tomtom_od
+    explanatory_od = create_OD_from_info(network_property+'_'+zone+'_dictionary')
+    path1 = str(pathlib.Path(__file__).parents[1])+'/graphsFromResults/split_analysis/{}'.format(zone)
+
+    for idx, shape in enumerate(shapes): 
+        heatmaps(explanatory_od*shape, residua*shape, zone, '{}_split{}'.format(network_property, idx), 'Residua_split{}'.format(idx),fileName='{}_split_{}'.format(network_property, idx),path=path1)

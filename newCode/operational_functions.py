@@ -28,12 +28,16 @@ def heatmaps(matrix1, matrix2, zone, name1, name2, addiTitle='' , fileName='', p
    
 def visualize_splits(shapes, zone, path):
     amount_shapes = len(shapes)
-    fig, ax = plt.subplots(1,amount_shapes)
-    fig.suptitle(zone)
-    for idx, shape in enumerate(shapes):
-        sns.heatmap(shape,ax=ax[idx]).set(title='shape_{}'.format(idx+1))
-    plt.savefig(path+'/visual_shapes_{}.png'.format(zone))  
-
+    extra = 0 if len(shapes)%2 == 0 else 1
+    for i in range(int(amount_shapes//2)+extra):
+        fig, ax = plt.subplots(1,2)
+        fig.suptitle(zone)
+        sns.heatmap(shapes[i*2],ax=ax[0]).set(title='shape_{}'.format(i*2+1))
+        if (i*2)+1 < len(shapes):
+            sns.heatmap(shapes[i*2+1],ax=ax[1]).set(title='shape_{}'.format(i*2+2))
+        plt.savefig(path+'/visual_shapes_{}_{}.png'.format(zone, i+1))  
+        plt.close()
+    
 
 def outliers(matrix, zone):
     fig,ax = plt.subplots()
@@ -153,6 +157,31 @@ def get_split_matrices(matrix, slices: int = -1, cutoffs = []):
                     shape2[i,j] = 1 
         return [shape1, shape2]
 
+# get a split on with a fixed size jump 
+def get_split_fixed(matrix, fixed_size = 0, _cutoffs = []):
+
+    min = np.min(matrix)
+    max = np.max(matrix)
+    
+    
+    extra = 0 if (fixed_size ==0 or max%fixed_size) == 0 else 1
+    slices = int((max//fixed_size) + extra) if fixed_size != 0 else len(_cutoffs)
+    cutoffs = [x*fixed_size for x in range(slices + 1)] if _cutoffs == [] else _cutoffs
+    print(cutoffs)
+
+    shapes = []
+    for k in range(slices-1):
+        shape = np.zeros(matrix.shape)
+        lower = cutoffs[k]
+        upper = cutoffs[k+1]
+        for i in range(len(matrix)):
+            for j in range(len(matrix)):
+                if lower <= matrix[i,j] < upper:
+                    shape[i,j] += 1
+        shapes.append(shape)
+    return shapes
+
+
 # This function sets up the test cases we work with (to start)
 # An average work day flow is taken from the morning peak hour (7 am to 9 am)
 def setup_test_case(nameZoning: str, nameTomTomCsv: str):
@@ -194,7 +223,7 @@ def calculate_gap_RMSE(matrix1, matrix2):
         for j in range(len(matrix1)):
             # we don't care about the intra zonal traffic
             if i != j:
-                gap += sqrt((matrix1[i, j] - matrix2[i, j])**2)
+                gap += sqrt((1/matrix1.size)*(matrix1[i, j] - matrix2[i, j])**2)
     return gap
 
 
