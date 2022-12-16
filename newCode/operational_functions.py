@@ -9,7 +9,8 @@ import seaborn as sns
 from dyntapy.demand_data import od_matrix_from_dataframes
 import geopandas as gpd
 import os
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LinearRegression 
+from math import ceil, floor
 
 
 def heatmaps(matrix1, matrix2, zone, name1, name2, addiTitle='' , fileName='', path = ''):
@@ -89,6 +90,7 @@ def calculate_gap(matrix1, matrix2):
     # input = squared matrix and optional the shape matrix (so only relevant elements in the list)
     # returns the list  
 def matrix_to_list(matrix, shape = []):
+
     if shape == []:
         return np.array(matrix.reshape([len(matrix)**2,]))
     else:
@@ -96,8 +98,10 @@ def matrix_to_list(matrix, shape = []):
         for i in range(len(shape)):
             for j in range(len(shape)):
                 if shape[i,j] == 1:
+
                     list.append(matrix[i,j])
         return np.array(list)
+        
 
 # function to make a matrix from the list
     # input = list (made of squared matrix) + shape matrix (only put back the relevant elements)
@@ -160,17 +164,16 @@ def get_split_matrices(matrix, slices: int = -1, cutoffs = []):
 # get a split on with a fixed size jump 
 def get_split_fixed(matrix, fixed_size = 0, _cutoffs = []):
 
-    min = np.min(matrix)
-    max = np.max(matrix)
+    min = floor(np.min(matrix))
+    max = ceil(np.max(matrix))
     
-    
-    extra = 0 if (fixed_size ==0 or max%fixed_size) == 0 else 1
+    extra = 0 if (fixed_size ==0 or max%fixed_size == 0) else 1
     slices = int((max//fixed_size) + extra) if fixed_size != 0 else len(_cutoffs)
-    cutoffs = [x*fixed_size for x in range(slices + 1)] if _cutoffs == [] else _cutoffs
-    print(cutoffs)
+    cutoffs = [x*fixed_size + min for x in range(slices + 1)] if _cutoffs == [] else _cutoffs
 
     shapes = []
-    for k in range(slices-1):
+    ones = 0
+    for k in range(slices):
         shape = np.zeros(matrix.shape)
         lower = cutoffs[k]
         upper = cutoffs[k+1]
@@ -179,6 +182,7 @@ def get_split_fixed(matrix, fixed_size = 0, _cutoffs = []):
                 if lower <= matrix[i,j] < upper:
                     shape[i,j] += 1
         shapes.append(shape)
+        ones += np.sum(shape)
     return shapes
 
 
@@ -225,5 +229,6 @@ def calculate_gap_RMSE(matrix1, matrix2):
             if i != j:
                 gap += sqrt((1/matrix1.size)*(matrix1[i, j] - matrix2[i, j])**2)
     return gap
+
 
 

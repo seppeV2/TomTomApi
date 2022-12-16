@@ -47,10 +47,8 @@ def approx_linear(original_od, tomtom_od, explanatory = [], list_return = False)
                 # model.coef_ = list with the slopes for each matrix (tomtom + explanatory)
         return approx_matrix, np.round(model.coef_,3), round(model.intercept_,3)
 
-
-
 # Perform a simple linear regression between two matrices
-def simple_linear_reg(original_od, tomtom_od, zone, norm = False):
+def simple_linear_reg(original_od, tomtom_od, zone, norm = False, ):
     if norm:
         approx_od, slope, intercept = approx_linear(original_od/np.sum(original_od), tomtom_od/np.sum(tomtom_od)) 
         approx_od = approx_od * np.sum(tomtom_od)
@@ -116,7 +114,7 @@ def split_linear_regression(original_od, tomtom_od, zone,network_property = '', 
         visualize_splits(shapes, zone ,path)
     else: 
         network_property
-        shapes = get_split_fixed(explanatory_od, fixed_size = fixed_jump) if cutoffs == [] else get_split_fixed(tomtom_od, _cutoffs = cutoffs)
+        shapes = get_split_fixed(original_od, fixed_size = fixed_jump) if cutoffs == [] else get_split_fixed(tomtom_od, _cutoffs = cutoffs)
         visualize_splits(shapes, zone ,path)
     approx_matrix = np.zeros(original_od.shape)
     slopes = []
@@ -126,11 +124,14 @@ def split_linear_regression(original_od, tomtom_od, zone,network_property = '', 
         orig_list = matrix_to_list(original_od, shape)
         tomtom_list = matrix_to_list(tomtom_od, shape)
 
-        approx_list , slope, intercept = approx_linear(orig_list, tomtom_list, list_return = True) 
-        slopes.append(slope)
-        intercepts.append(intercept)
-        approx_matrix += list_to_matrix(approx_list, shape)
-        summary += 'Split {} with equations: Y = {} * X + {}\n'.format(idx, np.round(slope[0],3), np.round(intercept,3))
+        
+        if orig_list != [] and tomtom_list != []:
+            approx_list , slope, intercept = approx_linear(orig_list, tomtom_list, list_return = True) 
+            slopes.append(slope)
+            intercepts.append(intercept)
+            approx_matrix += list_to_matrix(approx_list, shape)
+
+            summary += 'Split {} with equations: Y = {} * X + {}\n'.format(idx, np.round(slope[0],3), np.round(intercept,3))
 
 
     #plot the equations
@@ -146,5 +147,33 @@ def split_linear_regression(original_od, tomtom_od, zone,network_property = '', 
     plt.savefig(path+'/linear_equations_split_{}.png'.format(zone))
 
     approx_gap = calculate_gap_RMSE(original_od, approx_matrix)
-    return approx_gap, 'split on {}'.format(network_property), summary, shapes
+    return approx_gap, 'split on {}'.format(network_property), summary, shapes, approx_matrix
 
+# linear regression with the residuals and network property 
+def linear_residua(original_od, tomtom_od, network_property, zone):
+    residua = original_od - tomtom_od
+    explanatory_od = create_OD_from_info(network_property+'_'+zone+'_dictionary')
+    explanatory_od_norm = explanatory_od
+
+    intermediate_od, slope, intercept = approx_linear(residua, explanatory_od_norm)
+    approx_od = intermediate_od + tomtom_od
+
+    approx_gap = calculate_gap_RMSE(original_od, approx_od)
+
+    path = str(pathlib.Path(__file__).parents[1])+'/graphsFromResults/residua/heatmaps/residua_reg_{}'.format(network_property)
+    os.makedirs(path, exist_ok=True)
+
+    heatmaps(original_od, approx_od, zone, 'original OD matrix', 'approx OD matrix', '{} * [nxn] + {}'.format(slope,intercept), fileName = 'oriVSaprox_{}_{}'.format(zone,network_property), path=path)
+
+    return approx_gap, slope, intercept, approx_od
+
+def linear_residua_split(original_od, tomtom_od, network_property, zone, move):
+
+    original_od, tomtom_od = setup_test_case(zone, move)
+    residua = original_od - tomtom_od
+    explanatory_od = create_OD_from_info(network_property+'_'+zone+'_dictionary')
+    _, string, summary_split, shapes, intermediate = split_linear_regression(residua, explanatory_od, zone, fixed = True, fixed_jump = 10)
+    approx_od = intermediate + tomtom_od
+    approx_gap = calculate_gap_RMSE(approx_od, original_od)
+    
+    return approx_gap, string, summary_split, shapes

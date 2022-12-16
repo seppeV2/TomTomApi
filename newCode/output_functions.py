@@ -156,11 +156,10 @@ def gap_bars(gaps, moves, properties):
 
         offset = [start + x * width for x in range(len(gaps[property][moves[0]]))]
         x_original = [x+offset[0] for x in range(len(moves))]
-
         _,ax1 = plt.subplots()
 
         ax1.bar(x_original, orig_gap, width, label = 'Original', color = colors[0])
-
+        j=0
         for i  in range(1,len(gaps[property][moves[0]])):
             gap_list = []
             for idx, move in enumerate(moves):
@@ -168,7 +167,8 @@ def gap_bars(gaps, moves, properties):
                 legend_string = legend
                 gap_list.append(gap)    
             x_gap = [x+offset[i] for x in range(len(gap_list))]
-            ax1.bar(x_gap, gap_list, width, label = legend_string,color = colors[i])
+            j += -len(colors)+1 if i==len(colors) else 1
+            ax1.bar(x_gap, gap_list, width, label = legend_string,color = colors[j])
         
         ax1.set_xticks(range(len(moves)), moves)
         ax1.set_title('Bar charts of the absolute gaps from the different zones.')
@@ -286,3 +286,75 @@ def compare_with_splits(shapes, origin_od, tomtom_od, network_property, zone):
 
     for idx, shape in enumerate(shapes): 
         heatmaps(explanatory_od*shape, residua*shape, zone, '{}_split{}'.format(network_property, idx), 'Residua_split{}'.format(idx),fileName='{}_split_{}'.format(network_property, idx),path=path1)
+
+def residua_in_bars(residua, fileName, zone):
+    path = str(pathlib.Path(__file__).parents[1]) + '/graphsFromResults/Correlation_analyses/bar_shapes_dist'
+    os.makedirs(path, exist_ok=True)
+
+    slices = 10
+
+    max_v = np.max(residua)
+    min_v = np.min(residua)
+
+    res_range = max_v - min_v
+    offset = res_range/slices
+
+    cutoffs = [min_v + i*offset for i in range(slices+1)]
+    cutoffs_adj = cutoffs
+    cutoffs_adj[0] -= 0.1
+    cutoffs_adj.append(0)
+    cutoffs_adj = np.sort(cutoffs_adj)
+
+    bar_values = np.zeros(len(cutoffs_adj)-1)
+
+    for i in range(len(residua)):
+        for j in range(len(residua)):
+            for k in range(len(cutoffs_adj)):
+                if cutoffs_adj[k] < residua[i,j] <= cutoffs_adj[k+1]:
+                    bar_values[k] += 1
+    x = [x for x in range(len(cutoffs_adj)-1)]
+
+    fig,ax = plt.subplots(figsize=(15, 10))
+    plt.xticks(fontsize=10)
+    fig.tight_layout()
+    ax.bar(x, bar_values, width = 0.9)
+    xticks = ['[{},{}]'.format(round(cutoffs_adj[i],1),round(cutoffs_adj[i+1],1)) for i in range(len(cutoffs_adj)-1)]
+    ax.set_xticks(x,xticks)
+    ax.set_xlabel('lower bound')
+    ax.set_title('distribution plot for residua {}'.format(zone))
+    plt.savefig(path+'/{}.png'.format(fileName))
+
+def residua_3D_plot(residua, zone):
+    fig = plt.figure()
+    ax = plt.axes(projection = "3d")
+    
+    origins = [x for x in range(len(residua))]
+    data = residua
+    destinations = origins
+    
+    numOfCols = len(residua)
+    numOfRows = len(residua)
+    
+    xpos = np.arange(0, numOfCols, 1)
+    ypos = np.arange(0, numOfRows, 1)
+    xpos, ypos = np.meshgrid(xpos + 0.5, ypos + 0.5)
+    
+    xpos = xpos.flatten()
+    ypos = ypos.flatten()
+    zpos = np.zeros(numOfCols * numOfRows)
+    
+    dx = np.ones(numOfRows * numOfCols) * 0.5
+    dy = np.ones(numOfCols * numOfRows) * 0.5
+    dz = data.flatten()
+    
+    ax.bar3d(xpos, ypos, zpos, dx, dy, dz)
+    ax.set_xticklabels(origins)
+    ax.set_yticklabels(destinations)
+    
+    ax.set_xlabel('origin')
+    ax.set_ylabel('destination')
+    ax.set_zlabel('residua')
+    ax.set_title('3D plot of residua zone {}'.format(zone))
+    path = str(pathlib.Path(__file__).parents[1])+'/graphsFromResults/3D'
+    os.makedirs(path, exist_ok=True)
+    plt.savefig(path + '/3D_plot_{}.png'.format(zone))

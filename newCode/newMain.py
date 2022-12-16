@@ -1,6 +1,6 @@
-from operational_functions import heatmaps, calculate_gap_RMSE,matrix_to_list, normalize, get_split_matrices, list_to_matrix, visualize_splits, setup_test_case
-from output_functions import bars, equations, scatters, calculate_model, correlation_analyses, gap_bars, gap_bars_sum, compare_with_splits
-from regression import simple_linear_reg, explanatory_linear_regression, split_linear_regression
+from operational_functions import calculate_gap_RMSE, setup_test_case
+from output_functions import bars, equations, scatters, calculate_model, correlation_analyses, gap_bars, gap_bars_sum, compare_with_splits, residua_in_bars, residua_3D_plot
+from regression import simple_linear_reg, explanatory_linear_regression, split_linear_regression, linear_residua_split
 import pathlib
 import pandas as pd 
 import numpy as np
@@ -25,12 +25,13 @@ def main():
                     network_properties[2]: [1000]}
 
     #decide which analysis you want to run
-    run_correlation = True
+    run_correlation = False
     explanatory_analyses = True
     gaps_analysis =  True
     gaps_analysis_sum = True
-    split_analysis = True
-
+    split_analysis = False
+    residua_analysis = True
+    simple_linear_residua = True
     total_gap = {}
     summary = ''
 
@@ -45,6 +46,14 @@ def main():
         # Set up the matrices for this zone and move
         original_od, tomtom_od = setup_test_case(zone, move)
 
+
+
+        if residua_analysis:
+            residua = original_od - tomtom_od
+            residua_in_bars(residua, 'bar_residua_{}'.format(zone), zone)
+            residua_3D_plot(residua, zone)
+            
+
         """ path = str(pathlib.Path(__file__).parent) + '/data/results/'
         pd.DataFrame(np.round(original_od,1)).to_csv(path+"original_{}.csv".format(move))
         pd.DataFrame(tomtom_od).to_csv(path+"tomtom_{}.csv".format(move)) """
@@ -55,7 +64,7 @@ def main():
         # Simple linear regression 
         simple_approx_gap, slope, intercept = simple_linear_reg(original_od, tomtom_od, zone)
 
-        summary += 'SIMPLE LINEAR REGRESSION {}\n\nY = {} * X + {}, with gap = {}\n'.format(zone, np.round(slope[0],3), np.round(intercept,3), simple_approx_gap)
+        summary += 'SIMPLE LINEAR REGRESSION {}\n\nY = {} * X + {}, with gap = {}\n\nSIMPLE LINEAR REGRESSION RESIDUA\n\n'.format(zone, np.round(slope[0],3), np.round(intercept,3), simple_approx_gap)
 
 
 
@@ -83,15 +92,29 @@ def main():
                     correlation_analyses(original_od, tomtom_od, network_property, zone, method)
 
 
-                if  split_analysis and method == 'sum':
-                    approx_gap, string, summary_split, shapes = split_linear_regression(original_od, tomtom_od, zone, network_property, method, fixed = True, fixed_jump = cutoff_values[network_property][0])
+                if  split_analysis and method == 'sum' and network_property == network_properties[0]:
+                    approx_gap, string, summary_split, shapes, _ = split_linear_regression(original_od, tomtom_od, zone, network_property, method, fixed = True, fixed_jump = cutoff_values[network_property][0])
                     #approx_gap, string, summary_split = split_linear_regression(original_od, tomtom_od, zone, fixed = True, fixed_jump = 2)
                     compare_with_splits(shapes, original_od, tomtom_od, network_property, zone)
+                    
                     if  explanatory_analyses:
                         total_gap[network_property][move].append((approx_gap, string))
                     else:
                         total_gap['none'][move].append((approx_gap, string))
-                    summary += summary_split+'\n'
+                    summary += summary_split+'Approx gap after split = {}\n\n'.format(approx_gap)
+
+                if simple_linear_residua and method == 'sum':
+                    approx_gap, string, summary_split, shapes = linear_residua_split(original_od, tomtom_od, network_property, zone, move)
+
+                    if not explanatory_analyses:
+                        total_gap['none'][move].append((approx_gap, 'residua reg. {} splitted'.format(network_property)))
+                    else:
+                        total_gap[network_property][move].append((approx_gap, 'residua reg. {} splitted'.format(network_property)))
+                    summary += summary_split
+                    summary += 'Gap = {}'.format(approx_gap)
+
+
+
 
     # Perform the gap function
     if gaps_analysis:
