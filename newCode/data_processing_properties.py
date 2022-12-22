@@ -4,7 +4,8 @@ import geopandas as gpd
 import pathlib
 from math import isnan
 import numpy as np
-
+import os
+import matplotlib.pyplot as plt
 
 """ def get_od_matrix_from_database():
 
@@ -125,6 +126,8 @@ def create_landuse_list(fileName):
         except KeyError:
             landUse[line['ZONENUMMER']] = [(line['landuse'], line['area_calc'])]            
     
+    make_plots(landUse, fileName)
+
     keys = landUse.keys()
     final_dic = {}
     for key in keys:
@@ -144,10 +147,26 @@ def create_landuse_list(fileName):
     result = pd.DataFrame.from_dict(final_dic,orient='index')
     result.to_csv(str(pathlib.Path(__file__).parent)+'/data/poidby_landuse/landuse_{}_dictionary.csv'.format(fileName))
 
-""" 
+def make_plots(landUse, zone):
+    path = str(pathlib.Path(__file__).parents[1])+'/graphsFromResults/landUse/{}/'.format(zone)
+    os.makedirs(path, exist_ok=True)
+    
+    for key in landUse.keys():
+        
+        list_area = [area for (_,area) in landUse[key]]
+        list_landUse = [use for (use, _) in landUse[key]]
+        x = [x for x in range(len(list_area))]
+        figure, ax= plt.subplots()
+        ax.bar(x,list_area, label = list_landUse)
+        ax.legend()
+        figure.suptitle('{}, with zone = {}'.format(zone, key))
+        plt.savefig(path+'{}_{}.png'.format(key, zone))
+        plt.close()
+
+
 zonings = ['ZoningSmallLeuven', 'BruggeWithoutZeeBrugge', 'Hasselt']
 
 for zone in zonings:
     create_landuse_list(zone)
 
- """
+
