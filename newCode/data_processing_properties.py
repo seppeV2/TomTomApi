@@ -102,14 +102,6 @@ def create_OD_from_info(fileName, mergeWay= 'sum'):
     return OD
 
 
-""" zonings = ['ZoningSmallLeuven', 'BruggeWithoutZeeBrugge', 'Hasselt']
-info = ['households_cars_statsec_2021','households_cars_statsec_2021', 'population_per_stasec']
-infoName = ['total_huisH', 'total_wagens','TOTAL']
-for i in range(len(zonings)):
-    for j in range(len(zonings)):
-        build_dic_zones_extra_info(info[i], zonings[j], infoName[i])
- """
-    
 def create_landuse_list(fileName):
     df = pd.read_csv(str(pathlib.Path(__file__).parent) + '/data/poidby_landuse/rawdata/landuse_{}.csv'.format(fileName))
     landUse = {}
