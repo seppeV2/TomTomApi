@@ -41,23 +41,27 @@ def linear_residua_split(original_od, tomtom_od, network_property, zone):
 
     residua = original_od - tomtom_od
     explanatory_od = create_OD_from_info(network_property+'_'+zone+'_dictionary')
-    intermediate, slopes, intercepts, ranges = split_linear_regression(residua, explanatory_od, fixed_jump = 10)
+    cutoffs = [-0.1,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.1]
+    intermediate, slopes, intercepts, ranges = split_linear_regression(residua, explanatory_od, fixed_jump = 10, residua = True, extra = tomtom_od)#, _cutoffs = cutoffs)
     approx_od = intermediate + tomtom_od
     approx_gap = calculate_gap_RMSE(approx_od, original_od)
     
     return approx_gap, slopes, intercepts, ranges
 
 # Perform linear regression using clustering according network_proeprties
-def split_linear_regression(matrix1, matrix2 ,fixed_jump ):
-    
-    shapes, ranges = get_split_fixed(matrix1, fixed_size = fixed_jump)
+def split_linear_regression(matrix1, matrix2 ,fixed_jump = 0, _cutoffs = [] , residua = False, extra = []):
+
+    if fixed_jump != 0 and _cutoffs == []:
+        shapes, ranges = get_split_fixed(matrix1, fixed_size = fixed_jump) if not residua else get_split_fixed(matrix1, fixed_size = fixed_jump)
+    elif _cutoffs != []:
+        shapes, ranges = get_split_fixed(matrix1, cutoffs = _cutoffs) if not residua else get_split_fixed(matrix1, cutoffs = _cutoffs)
         
     approx_matrix = np.zeros(matrix1.shape)
     slopes = []
     intercepts = []
     for shape in shapes:
         list_1 = matrix_to_list(matrix1, shape)
-        list_2 = matrix_to_list(matrix2, shape)
+        list_2 = matrix_to_list(extra, shape)
 
         if list_1 != [] and list_2 != []:
             approx_list , slope, intercept = approx_linear(list_1, list_2, list_return = True) 

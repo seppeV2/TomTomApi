@@ -1,4 +1,4 @@
-from operational_functions import calculate_gap_RMSE, setup_test_case
+from operational_functions import calculate_gap_RMSE, setup_test_case,calculate_perc_matrix
 from output_functions import bars, equations, scatters, calculate_model, correlation_analyses, gap_bars, gap_bars_sum, compare_with_splits, residua_in_bars, residua_3D_plot
 from regression import simple_linear_reg, explanatory_linear_regression, split_linear_regression, linear_residua_split
 import pathlib
@@ -25,13 +25,14 @@ def main():
                     network_properties[2]: [1000]}
 
     #decide which analysis you want to run
-    run_correlation = False
-    explanatory_analyses = True
-    gaps_analysis =  True
-    gaps_analysis_sum = True
+    run_correlation = True
+    explanatory_analyses = False
+    gaps_analysis =  False
+    gaps_analysis_sum = False
     split_analysis = False
-    residua_analysis = True
-    simple_linear_residua = True
+    residua_analysis = False
+    simple_linear_residua = False
+    gap_percentage = False
     total_gap = {}
     summary = ''
 
@@ -46,18 +47,14 @@ def main():
         # Set up the matrices for this zone and move
         original_od, tomtom_od = setup_test_case(zone, move)
 
-
-
+        if gap_percentage:
+            gap_percentage_matrix = calculate_perc_matrix(original_od, tomtom_od, zone)
+            print(np.sum(gap_percentage_matrix))
         if residua_analysis:
             residua = original_od - tomtom_od
             residua_in_bars(residua, 'bar_residua_{}'.format(zone), zone)
             residua_3D_plot(residua, zone)
             
-
-        """ path = str(pathlib.Path(__file__).parent) + '/data/results/'
-        pd.DataFrame(np.round(original_od,1)).to_csv(path+"original_{}.csv".format(move))
-        pd.DataFrame(tomtom_od).to_csv(path+"tomtom_{}.csv".format(move)) """
-
         # Calculate the original Gap (via RMSE)
         original_gap = calculate_gap_RMSE(original_od, tomtom_od)
 
@@ -65,8 +62,6 @@ def main():
         simple_approx_gap, slope, intercept = simple_linear_reg(original_od, tomtom_od, zone)
 
         summary += 'SIMPLE LINEAR REGRESSION {}\n\nY = {} * X + {}, with gap = {}\n\nSIMPLE LINEAR REGRESSION RESIDUA\n\n'.format(zone, np.round(slope[0],3), np.round(intercept,3), simple_approx_gap)
-
-
 
         if not explanatory_analyses:
             total_gap['none'][move]  = [(original_gap, 'original')]
@@ -82,7 +77,7 @@ def main():
                 # total_gap[network_property][move].append((simple_approx_gap_norm, 'Reg. simple (norm)'))
             for method in methods:
                 if explanatory_analyses:
-                    # do linear regression with explanatory variables
+                    # Do linear regression with explanatory variables
                     explanatory_approx_gap, slope, intercept = explanatory_linear_regression(original_od, tomtom_od, zone, network_property ,method)
                     summary += '{} for {} with method {}\nY = {} * X1 + {} * X2 + {}\n\n'.format(zone,network_property, method, np.round(slope[0],3), np.round(slope[1],3),np.round(intercept,3))
                     total_gap[network_property][move].append((explanatory_approx_gap, 'Reg. {} {}'.format(network_property.split('_')[0], method)))
@@ -90,7 +85,6 @@ def main():
                 # correlation analysis
                 if run_correlation:
                     correlation_analyses(original_od, tomtom_od, network_property, zone, method)
-
 
                 if  split_analysis and method == 'sum' and network_property == network_properties[0]:
                     approx_gap, string, summary_split, shapes, _ = split_linear_regression(original_od, tomtom_od, zone, network_property, method, fixed = True, fixed_jump = cutoff_values[network_property][0])
@@ -113,9 +107,6 @@ def main():
                     summary += summary_split
                     summary += 'Gap = {}'.format(approx_gap)
 
-
-
-
     # Perform the gap function
     if gaps_analysis:
         if not explanatory_analyses:
@@ -125,10 +116,5 @@ def main():
 
     if gaps_analysis_sum:
         gap_bars_sum(total_gap, moves, network_properties)      
-
-    print(summary)
-
-
-
 
 main()

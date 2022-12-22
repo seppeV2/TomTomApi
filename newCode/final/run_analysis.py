@@ -7,8 +7,8 @@ import numpy as np
 
 zonings = ['ZoningSmallLeuven', 'BruggeWithoutZeeBrugge', 'Hasselt']
 moves = ['LeuvenExternal', 'BruggeExternal', 'HasseltExternal']
-network_properties = ['population_statbel', 'households_statbel', 'cars_statbel']
-
+#network_properties = ['population_statbel', 'households_statbel', 'cars_statbel']
+network_properties = ['households_statbel']
 method = 'sum'
 
 slices_values = {}
@@ -50,4 +50,8 @@ for zone, move in zip(zonings, moves):
         all_ranges.append(ranges)
 
 bar_outputs(gaps, gaps_norm, names, names_norm, moves)
+print(all_slopes)
+print('\n')
+print(all_intercepts)
+print('\n')
 print(all_ranges)

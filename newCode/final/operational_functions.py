@@ -119,18 +119,19 @@ def list_to_matrix(list, shapeMatrix=[]):
         return list_bis.reshape([sqrt(len(list)), sqrt(len(list))])
 
 # get a split on with a fixed size jump 
-def get_split_fixed(matrix, fixed_size = 0, _cutoffs = []):
+def get_split_fixed(matrix, fixed_size = 0, cutoffs = []):
 
     min = floor(np.min(matrix))
     max = ceil(np.max(matrix))
     
     extra = 0 if (fixed_size ==0 or max%fixed_size == 0) else 1
-    slices = int((max//fixed_size) + extra) if fixed_size != 0 else len(_cutoffs)
-    cutoffs = [x*fixed_size + min for x in range(slices + 1)] if _cutoffs == [] else _cutoffs
+    slices = int((max//fixed_size) + extra) if fixed_size != 0 else len(cutoffs)-1
+    cutoffs = [x*fixed_size for x in range(slices + 1)] if cutoffs == [] else cutoffs
 
+    #make sure everything is in the range
+    cutoffs.insert(0, -10**10)
     ranges = []
     shapes = []
-    ones = 0
     for k in range(slices):
         shape = np.zeros(matrix.shape)
         lower = cutoffs[k]
@@ -138,9 +139,50 @@ def get_split_fixed(matrix, fixed_size = 0, _cutoffs = []):
         ranges.append((lower,upper))
         for i in range(len(matrix)):
             for j in range(len(matrix)):
-
                 if lower <= matrix[i,j] < upper:
                     shape[i,j] += 1
-        shapes.append(shape)
-        ones += np.sum(shape)
+
+        if np.sum(shape) != 0:
+            shapes.append(shape)
     return shapes, ranges
+
+    # split matrix in shapes according the values inside the matrix
+def get_split_matrices(matrix, slices: int = -1, cutoffs = []):
+    #split matrices in x slices between min (0) and max values
+    if slices != -1:
+        shapes = []
+        ranges = []
+        prev = -1
+        for k in range(slices):
+            if cutoffs == []:
+                next = np.max(matrix)*((k+1)/slices)
+            else:
+                if k == slices-1:
+                    next = np.max(matrix)+1
+                else:
+                    next = cutoffs[k]
+            shape = np.zeros(matrix.shape)
+            for i in range(len(matrix)):
+                for j in range(len(matrix)):
+                    
+                    if prev < matrix[i,j] <= next:
+                        shape[i,j] += 1
+            ranges.append((prev, next))
+            prev = next
+            shapes.append(shape)
+            
+        return shapes, ranges
+    #split matrix in two slices (before and after average)
+    elif slices == 1:
+        return np.full((len(matrix), len(matrix)), 1)
+    else: 
+        shape1 = np.zeros(matrix.shape)
+        shape2 = np.zeros(matrix.shape)
+        average = np.average(matrix)
+        for i in range(len(matrix)):
+            for j in range(len(matrix)):
+                if matrix[i,j] <= average:
+                    shape1[i,j] = 1
+                else:
+                    shape2[i,j] = 1 
+        return [shape1, shape2]

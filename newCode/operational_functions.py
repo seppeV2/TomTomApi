@@ -12,7 +12,6 @@ import os
 from sklearn.linear_model import LinearRegression 
 from math import ceil, floor
 
-
 def heatmaps(matrix1, matrix2, zone, name1, name2, addiTitle='' , fileName='', path = ''):
     fig, ax = plt.subplots(1, 2)
     fig.suptitle('{} {}'.format(zone, addiTitle))
@@ -39,7 +38,6 @@ def visualize_splits(shapes, zone, path):
         plt.savefig(path+'/visual_shapes_{}_{}.png'.format(zone, i+1))  
         plt.close()
     
-
 def outliers(matrix, zone):
     fig,ax = plt.subplots()
     ax.set_title('Normalized difference {}'.format(zone))
@@ -102,7 +100,6 @@ def matrix_to_list(matrix, shape = []):
                     list.append(matrix[i,j])
         return np.array(list)
         
-
 # function to make a matrix from the list
     # input = list (made of squared matrix) + shape matrix (only put back the relevant elements)
     # return = resized matrix
@@ -185,7 +182,6 @@ def get_split_fixed(matrix, fixed_size = 0, _cutoffs = []):
         ones += np.sum(shape)
     return shapes
 
-
 # This function sets up the test cases we work with (to start)
 # An average work day flow is taken from the morning peak hour (7 am to 9 am)
 def setup_test_case(nameZoning: str, nameTomTomCsv: str):
@@ -217,7 +213,6 @@ def setup_test_case(nameZoning: str, nameTomTomCsv: str):
     tomtom_od = np.round((tomtom_od / 5),3)
     return original_od, tomtom_od
 
-
 # function to calculate the gap between two matrices (of the same shape)
 # In this case we use RMSE to find that gap between every OD pair
 # Sum of all these together form the gap.
@@ -230,5 +225,22 @@ def calculate_gap_RMSE(matrix1, matrix2):
                 gap += sqrt((1/matrix1.size)*(matrix1[i, j] - matrix2[i, j])**2)
     return gap
 
+def calculate_perc_matrix(matrix1, matrix2, zone):
+    full_gap = calculate_gap_RMSE(matrix1, matrix2)
+    perc_matrix = np.zeros(matrix1.shape)
+    for i in range(len(matrix1)):
+        for j in range(len(matrix1)):
+            # we don't care about the intra zonal traffic
+            if i != j:
+                perc_matrix[i,j] += (sqrt((1/matrix1.size)*(matrix1[i, j] - matrix2[i, j])**2))/full_gap
 
-
+    fig, ax = plt.subplots()
+    fig.suptitle('matrix percentage {}'.format(zone))
+    sns.heatmap(perc_matrix, ax=ax)
+    path = str(pathlib.Path(__file__).parents[1])+'/graphsFromResults/general_info/heatmaps/percentage_matrix'
+    os.makedirs(path, exist_ok=True)
+    plt.savefig(path+'/heatmap_gap_percentage{}.png'.format(zone))
+    plt.close()
+    
+    
+    return perc_matrix

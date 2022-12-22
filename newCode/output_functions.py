@@ -1,4 +1,4 @@
-from operational_functions import heatmaps, outliers, od_matrix_from_tomtom, calculate_gap,matrix_to_list, normalize, get_split_matrices, list_to_matrix, visualize_splits
+from operational_functions import heatmaps, outliers, od_matrix_from_tomtom, calculate_gap,matrix_to_list, normalize, get_split_matrices, list_to_matrix, visualize_splits,calculate_perc_matrix
 from data_processing_properties import create_OD_from_info
 import numpy as np
 import scipy
@@ -21,6 +21,12 @@ def correlation_analyses(original_od, tomtom_od, network_property, zone, method 
     correlation, _ = pearsonr(matrix_to_list(residua), matrix_to_list(property_matrix))
     heatmaps(residua, property_matrix, zone, 'Residu Matrix', network_property, 'pearson correlation factor = {}'.format(round(np.average(correlation),3)), network_property, path0)
     heatmaps(residua/np.max(residua), property_matrix/(np.max(property_matrix)), zone, 'Residu Matrix', network_property, 'pearson correlation factor = {}, (normalized)'.format(round(np.average(correlation),3)), network_property, path1)
+
+    gap_percentage_matrix = calculate_perc_matrix(original_od, tomtom_od, zone)
+    heatmaps(gap_percentage_matrix, property_matrix/(np.max(property_matrix)), zone, 'gap_percentage', network_property, 'percentage vs normalized property', path = path1, fileName='percentage_{}'.format(zone))
+
+
+
     fig,_ = plt.subplots(1,1)
     fig.suptitle('Scatter residu vs {}'.format(network_property))
     plt.scatter(matrix_to_list(residua),matrix_to_list(property_matrix))
@@ -37,7 +43,7 @@ def correlation_analyses(original_od, tomtom_od, network_property, zone, method 
     plt.savefig(path1+'/scatter_residu_vs_{}'.format(network_property))
     plt.close()
    
-#functiont to calculate_model
+# functions to calculate_model
 def calculate_model(intercepts, modelSlope, modelIntercept, moves, road_coverage, tomtomData, shapes_dic, approxOD, originalData):
     averageModelIntercept = np.average([i[0] for i in intercepts])
     print("Model to build MOW: [({} * road_coverage + {}) * tomtom_od + {}] * number_of_trips".format(modelSlope, modelIntercept, averageModelIntercept))
@@ -48,7 +54,7 @@ def calculate_model(intercepts, modelSlope, modelIntercept, moves, road_coverage
         approx_gap2.append(calculate_gap(originalData[move], newMatrix))
     return approx_gap2, string
 
-#make the linear eq plots
+# make the linear eq plots
 def equations(slopes, intercepts, move, path):
     x = np.linspace(0,10,300)
     for i in range(len(slopes[0])):
@@ -62,6 +68,7 @@ def equations(slopes, intercepts, move, path):
         ax.set_title('Linear equations from the {}th split of the matrix'.format(i+1))
         plt.savefig(path+'/linear_equations_split_{}.png'.format(i+1))
 
+# 
 def gap_bars_sum(gaps, moves, properties):
 
     path = str(pathlib.Path(__file__).parents[1])+'/graphsFromResults/general_info/sum_specific_gaps/'
@@ -133,8 +140,6 @@ def gap_bars_sum(gaps, moves, properties):
     plt.savefig(path+'gap_bar_normalized_sum.png')
     plt.close()
 
-
-
 # this function makes a plot of the gaps between 
 def gap_bars(gaps, moves, properties):
     for property in properties:
@@ -203,9 +208,7 @@ def gap_bars(gaps, moves, properties):
         plt.savefig(path+'gap_bar_normalized.png')
         plt.close()
         
-        
-
-#make the bars
+# make the bars
 def bars(origGap,approxGap,intercepts, moves, path, approxGapModel = [], string = ""):
     if approxGapModel == []:
         #make some plots 
@@ -249,7 +252,7 @@ def bars(origGap,approxGap,intercepts, moves, path, approxGapModel = [], string 
         ax3.legend()
         plt.savefig(path+'/modelGap.png')
 
-#make scatter and plot the best linear fit
+# make scatter and plot the best linear fit
 def scatters(slopes,area, road_coverage):
     x2 = np.linspace(min(area)-20,max(area)+20,1000)
 
@@ -278,7 +281,7 @@ def scatters(slopes,area, road_coverage):
 
     return res2.slope, res2.intercept
 
-
+# 
 def compare_with_splits(shapes, origin_od, tomtom_od, network_property, zone):
     residua = origin_od - tomtom_od
     explanatory_od = create_OD_from_info(network_property+'_'+zone+'_dictionary')
@@ -287,6 +290,7 @@ def compare_with_splits(shapes, origin_od, tomtom_od, network_property, zone):
     for idx, shape in enumerate(shapes): 
         heatmaps(explanatory_od*shape, residua*shape, zone, '{}_split{}'.format(network_property, idx), 'Residua_split{}'.format(idx),fileName='{}_split_{}'.format(network_property, idx),path=path1)
 
+# 
 def residua_in_bars(residua, fileName, zone):
     path = str(pathlib.Path(__file__).parents[1]) + '/graphsFromResults/Correlation_analyses/bar_shapes_dist'
     os.makedirs(path, exist_ok=True)
@@ -324,6 +328,7 @@ def residua_in_bars(residua, fileName, zone):
     ax.set_title('distribution plot for residua {}'.format(zone))
     plt.savefig(path+'/{}.png'.format(fileName))
 
+# 
 def residua_3D_plot(residua, zone):
     fig = plt.figure()
     ax = plt.axes(projection = "3d")
