@@ -102,8 +102,6 @@ def create_OD_from_info(fileName, mergeWay= 'sum'):
     return OD
 
 
-
-
 """ zonings = ['ZoningSmallLeuven', 'BruggeWithoutZeeBrugge', 'Hasselt']
 info = ['households_cars_statsec_2021','households_cars_statsec_2021', 'population_per_stasec']
 infoName = ['total_huisH', 'total_wagens','TOTAL']
@@ -112,5 +110,52 @@ for i in range(len(zonings)):
         build_dic_zones_extra_info(info[i], zonings[j], infoName[i])
  """
     
+def create_landuse_list(fileName):
+    df = pd.read_csv(str(pathlib.Path(__file__).parent) + '/data/poidby_landuse/rawdata/landuse_{}.csv'.format(fileName))
+    landUse = {}
+    color_code = {  'industrial':1,
+                    'commercial':2,
+                    'residential':3,
+                    'retail':4,
+                    }
+    for i in range(len(df)):
+        line = df.iloc[i]
+        try:
+            landuse_list = landUse[line['ZONENUMMER']]
+            added = False
+            for idx, (l,a) in enumerate(landuse_list):
+                if l == line['landuse']:
+                    landUse[line['ZONENUMMER']].pop(idx)
+                    landUse[line['ZONENUMMER']].append((line['landuse'], line['area_calc']+a))
+                    added = True
+            if not added:
+                    landUse[line['ZONENUMMER']].append((line['landuse'], line['area_calc']))
+        except KeyError:
+            landUse[line['ZONENUMMER']] = [(line['landuse'], line['area_calc'])]            
+    
+    keys = landUse.keys()
+    final_dic = {}
+    for key in keys:
+        first = True
+        for use in landUse[key]:
+            (l,a) = use
+            if first:
+                (largest_l, largest_a) = (l,a)
+                first = False
+            else:
+                if a > largest_a:
+                    (largest_l, largest_a) = (l,a)
+        try:
+            final_dic[key] = color_code[largest_l]
+        except KeyError:
+            final_dic[key] = 0
+    result = pd.DataFrame.from_dict(final_dic,orient='index')
+    result.to_csv(str(pathlib.Path(__file__).parent)+'/data/poidby_landuse/landuse_{}_dictionary.csv'.format(fileName))
 
+""" 
+zonings = ['ZoningSmallLeuven', 'BruggeWithoutZeeBrugge', 'Hasselt']
 
+for zone in zonings:
+    create_landuse_list(zone)
+
+ """
