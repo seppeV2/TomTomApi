@@ -10,6 +10,9 @@ from dyntapy.demand_data import od_matrix_from_dataframes
 import geopandas as gpd
 import os
 from sklearn.linear_model import LinearRegression 
+from data_processing import create_OD_from_info
+from operational_functions import matrix_to_list, list_to_matrix, calculate_gap_RMSE, get_split_fixed
+from scipy.stats import pearsonr
 
 def bar_outputs(gaps, gaps_norm, names, names_norm, moves):
     path = str(pathlib.Path(__file__).parent) + '/plots/bar_gaps/'
@@ -99,3 +102,20 @@ def visualize_splits(shapes, zone, path):
         plt.savefig(path+'/visual_shapes_{}_{}.png'.format(zone, i+1))  
         plt.close()
     
+# function to make heatmaps between the diff of the original matrix and the tomtom matrix
+# and the property matrix with it's method of merging the property (OD) eg 'sum'
+# the results are stored in a folder, the pearson correlation factor is displayed on the graphs as well.
+def correlation_analyses(residua, property_matrix, network_property, zone, method , name):
+    path1 = str(pathlib.Path(__file__).parents[1])+'/graphsFromResults/Correlation_analyses_new/normalized/{}/{}'.format(method,zone)
+    os.makedirs(path1, exist_ok=True)
+    correlation, _ = pearsonr(matrix_to_list(residua), matrix_to_list(property_matrix))
+    heatmaps(residua/np.max(residua), property_matrix/(np.max(property_matrix)), zone, 'Residu Matrix', network_property, 'pearson correlation factor = {}, (normalized)'.format(round(np.average(correlation),3)), network_property+name, path1)
+
+
+    fig,_ = plt.subplots(1,1)
+    fig.suptitle('Scatter residu vs {} (normalized)'.format(network_property))
+    plt.scatter(matrix_to_list(residua)/np.max(matrix_to_list(residua)),matrix_to_list(property_matrix)/np.max(matrix_to_list(property_matrix)))
+    plt.ylabel('Normalized {}'.format(network_property))
+    plt.xlabel('Normalized Residu')
+    plt.savefig(path1+'/scatter_residu_vs_{}_{}'.format(network_property, name))
+    plt.close()

@@ -96,7 +96,6 @@ def matrix_to_list(matrix, shape = []):
         for i in range(len(shape)):
             for j in range(len(shape)):
                 if shape[i,j] == 1:
-
                     list.append(matrix[i,j])
         return np.array(list)
         
@@ -121,22 +120,21 @@ def list_to_matrix(list, shapeMatrix=[]):
 # get a split on with a fixed size jump 
 def get_split_fixed(matrix, fixed_size = 0, cutoffs = []):
 
-    min = floor(np.min(matrix))
     max = ceil(np.max(matrix))
     
     extra = 0 if (fixed_size ==0 or max%fixed_size == 0) else 1
     slices = int((max//fixed_size) + extra) if fixed_size != 0 else len(cutoffs)-1
     cutoffs = [x*fixed_size for x in range(slices + 1)] if cutoffs == [] else cutoffs
-
     #make sure everything is in the range
     cutoffs.insert(0, -10**10)
+    cutoffs[-1] += 1
     ranges = []
     shapes = []
-    for k in range(slices):
+    for k in range(slices+1):
         shape = np.zeros(matrix.shape)
         lower = cutoffs[k]
         upper = cutoffs[k+1]
-        ranges.append((lower,upper))
+        
         for i in range(len(matrix)):
             for j in range(len(matrix)):
                 if lower <= matrix[i,j] < upper:
@@ -144,6 +142,7 @@ def get_split_fixed(matrix, fixed_size = 0, cutoffs = []):
 
         if np.sum(shape) != 0:
             shapes.append(shape)
+            ranges.append((lower,upper))
     return shapes, ranges
 
     # split matrix in shapes according the values inside the matrix

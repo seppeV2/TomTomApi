@@ -1,5 +1,5 @@
 from operational_functions import import_test_case, calculate_gap_RMSE
-from regression_functions import simple_linear_reg, linear_residua_split
+from regression_functions import simple_linear_reg, linear_residua_split, land_use_split, adjust_property
 from output_functions import bar_outputs
 import numpy as np
 
@@ -20,6 +20,7 @@ bar_analysis = True
 all_slopes = []
 all_intercepts = []
 all_ranges = []
+statbel = False
 for zone, move in zip(zonings, moves):
     # Import the od matrices
     original_od, tomtom_od = import_test_case(zone)
@@ -38,20 +39,26 @@ for zone, move in zip(zonings, moves):
     names[move].append('simp. reg. gap')
     names_norm[move].append('Norm. simp. reg. gap')
 
+    #if statbel:
     for network_property in network_properties:
-        approx_gap, slopes, intercepts, ranges = linear_residua_split(original_od, tomtom_od, network_property, zone)
-        gaps[move].append(approx_gap)
-        gaps_norm[move].append(approx_gap/gaps[move][0])
-        names[move].append('split. {}_{} reg.'.format(network_property.split('_')[0], zone))
-        names_norm[move].append('Norm. split. {}_{} reg.'.format(network_property.split('_')[0], zone))
+        adjusted_property_od = adjust_property(original_od, tomtom_od, network_property, zone)
+        if statbel:
+            approx_gap, slopes, intercepts, ranges = linear_residua_split(original_od, tomtom_od, network_property, zone)
+            gaps[move].append(approx_gap)
+            gaps_norm[move].append(approx_gap/gaps[move][0])
+            names[move].append('split. {}_{} reg.'.format(network_property.split('_')[0], zone))
+            names_norm[move].append('Norm. split. {}_{} reg.'.format(network_property.split('_')[0], zone))
 
-        all_slopes.append(slopes)
-        all_intercepts.append(intercepts)
-        all_ranges.append(ranges)
+            all_slopes.append(slopes)
+            all_intercepts.append(intercepts)
+            all_ranges.append(ranges)
 
-bar_outputs(gaps, gaps_norm, names, names_norm, moves)
+    #approx_gap, slopes, intercepts = 
+    #land_use_split(original_od, tomtom_od, zone)
+
+""" bar_outputs(gaps, gaps_norm, names, names_norm, moves)
 print(all_slopes)
 print('\n')
 print(all_intercepts)
 print('\n')
-print(all_ranges)
+print(all_ranges) """

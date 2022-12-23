@@ -164,9 +164,9 @@ def make_plots(landUse, zone):
         plt.close()
 
 
-zonings = ['ZoningSmallLeuven', 'BruggeWithoutZeeBrugge', 'Hasselt']
+""" zonings = ['ZoningSmallLeuven', 'BruggeWithoutZeeBrugge', 'Hasselt']
 
 for zone in zonings:
     create_landuse_list(zone)
-
+ """
 
