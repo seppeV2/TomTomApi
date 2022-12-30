@@ -70,7 +70,7 @@ def simple_linear_reg(original_od, tomtom_od, zone, norm = False, ):
 
     heatmaps(original_od, tomtom_od, zone, 'original OD matrix', 'tomtom OD matrix', '{} * [nxn] + {}'.format(slope,intercept), 'oriVStom_{}'.format(zone), path)
     heatmaps(original_od/original_od_norm, tomtom_od/tomtom_od_norm, zone, 'original OD matrix', 'tomtom OD matrix', '{} * [nxn] + {}'.format(slope,intercept), 'oriVStom_{}_normalized'.format(zone), path )
-    return approx_gap, slope, intercept
+    return approx_gap, slope, intercept, approx_od
 
 # Perform linear regression with explanatory variables
 def explanatory_linear_regression(original_od, tomtom_od, zone, network_property, converge_method):

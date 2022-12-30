@@ -1,5 +1,5 @@
-from operational_functions import calculate_gap_RMSE, setup_test_case,calculate_perc_matrix
-from output_functions import bars, equations, scatters, calculate_model, correlation_analyses, gap_bars, gap_bars_sum, compare_with_splits, residua_in_bars, residua_3D_plot
+from operational_functions import calculate_gap_RMSE, setup_test_case,calculate_perc_matrix, heatmap
+from output_functions import bars, equations, scatters, calculate_model, correlation_analyses, gap_bars, gap_bars_sum, compare_with_splits, residua_in_bars, residua_3D_plot, heatmaps
 from regression import simple_linear_reg, explanatory_linear_regression, split_linear_regression, linear_residua_split
 import pathlib
 import pandas as pd 
@@ -25,14 +25,15 @@ def main():
                     network_properties[2]: [1000]}
 
     #decide which analysis you want to run
-    run_correlation = True
+    run_correlation = False
     explanatory_analyses = False
     gaps_analysis =  False
     gaps_analysis_sum = False
     split_analysis = False
-    residua_analysis = False
+    residua_analysis = True
     simple_linear_residua = False
     gap_percentage = False
+    different_approach = True
     total_gap = {}
     summary = ''
 
@@ -54,14 +55,31 @@ def main():
             residua = original_od - tomtom_od
             residua_in_bars(residua, 'bar_residua_{}'.format(zone), zone)
             residua_3D_plot(residua, zone)
-            
+        
+        
         # Calculate the original Gap (via RMSE)
         original_gap = calculate_gap_RMSE(original_od, tomtom_od)
 
         # Simple linear regression 
-        simple_approx_gap, slope, intercept = simple_linear_reg(original_od, tomtom_od, zone)
+        simple_approx_gap, slope, intercept, approx_od = simple_linear_reg(original_od, tomtom_od, zone)
 
         summary += 'SIMPLE LINEAR REGRESSION {}\n\nY = {} * X + {}, with gap = {}\n\nSIMPLE LINEAR REGRESSION RESIDUA\n\n'.format(zone, np.round(slope[0],3), np.round(intercept,3), simple_approx_gap)
+
+
+        if different_approach:
+            multiply_fac = np.sum(original_od)/np.sum(tomtom_od)
+            approx_2 = tomtom_od * multiply_fac
+            
+            approx_residua = original_od - approx_od
+            heatmap(approx_residua, zone,  'approx_residual', fileName='approx_residual_{}'.format(zone))
+
+
+
+            approx_residua_2 = original_od - approx_2
+            heatmap(approx_residua_2, zone,  'approx_residual', fileName='approx_2_residual_{}'.format(zone))
+
+
+
 
         if not explanatory_analyses:
             total_gap['none'][move]  = [(original_gap, 'original')]
@@ -116,5 +134,7 @@ def main():
 
     if gaps_analysis_sum:
         gap_bars_sum(total_gap, moves, network_properties)      
+    
+    print(summary)
 
 main()

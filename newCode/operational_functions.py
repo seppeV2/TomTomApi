@@ -25,6 +25,20 @@ def heatmaps(matrix1, matrix2, zone, name1, name2, addiTitle='' , fileName='', p
     else: 
         plt.savefig(path+'/heatmap_{}.png'.format(zone))
     plt.close()
+
+def heatmap(matrix, zone, name, addiTitle='' , fileName='', path = ''):
+    fig, ax = plt.subplots()
+    fig.suptitle('{} {}'.format(zone, addiTitle))
+    sns.heatmap(matrix, ax=ax).set(title=name)
+    if path == '':
+        path = str(pathlib.Path(__file__).parents[1])+'/graphsFromResults/general_info/heatmaps'
+        os.makedirs(path, exist_ok=True)
+    if fileName != '':
+        plt.savefig(path+'/heatmap_{}.png'.format(fileName))
+    else: 
+        plt.savefig(path+'/heatmap_{}.png'.format(zone))
+    plt.close()
+
    
 def visualize_splits(shapes, zone, path):
     amount_shapes = len(shapes)
@@ -210,7 +224,7 @@ def setup_test_case(nameZoning: str, nameTomTomCsv: str):
     flow_column = 'Date range: 2021-01-25 - 2021-01-29 Time range: 07:00 - 09:00'
     tomtom_od = od_matrix_from_tomtom(path, flow_column)
     #we want the average flow in the peak hours so we divide the flow from one work week by 5
-    tomtom_od = np.round((tomtom_od / 5),3)
+    tomtom_od = tomtom_od / 5
     return original_od, tomtom_od
 
 # function to calculate the gap between two matrices (of the same shape)
