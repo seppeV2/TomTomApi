@@ -1,4 +1,4 @@
-from operational_functions import calculate_gap_RMSE, setup_test_case,calculate_perc_matrix, heatmap
+from operational_functions import calculate_gap_RMSE, setup_test_case,calculate_perc_matrix, heatmap,find_optimal_coef,calculate_gap_RMSE
 from output_functions import bars, equations, scatters, calculate_model, correlation_analyses, gap_bars, gap_bars_sum, compare_with_splits, residua_in_bars, residua_3D_plot, heatmaps
 from regression import simple_linear_reg, explanatory_linear_regression, split_linear_regression, linear_residua_split
 import pathlib
@@ -14,8 +14,10 @@ np.set_printoptions(suppress=True)
 
 
 def main():
-    zonings = ['ZoningSmallLeuven', 'BruggeWithoutZeeBrugge', 'Hasselt']
-    moves = ['LeuvenExternal', 'BruggeExternal', 'HasseltExternal']
+    zonings = ['ZoningSmallLeuven', 'BruggeWithoutZeeBrugge', 'Hasselt', 'Roeselare']
+    moves = ['LeuvenExternal', 'BruggeExternal', 'HasseltExternal','roeselare']
+    zonings = ['Roeselare']
+    moves = ['roeselare']
     network_properties = ['population_statbel', 'households_statbel', 'cars_statbel']
     methods = ['sum', 'destination']#, 'origin'] # --> origin and sum based are very similar
 
@@ -27,7 +29,7 @@ def main():
     #decide which analysis you want to run
     run_correlation = False
     explanatory_analyses = False
-    gaps_analysis =  False
+    gaps_analysis =  True
     gaps_analysis_sum = False
     split_analysis = False
     residua_analysis = True
@@ -67,16 +69,21 @@ def main():
 
 
         if different_approach:
-            multiply_fac = np.sum(original_od)/np.sum(tomtom_od)
+            multiply_fac = find_optimal_coef(original_od, tomtom_od)
+            print(multiply_fac)
             approx_2 = tomtom_od * multiply_fac
             
             approx_residua = original_od - approx_od
-            heatmap(approx_residua, zone,  'approx_residual', fileName='approx_residual_{}'.format(zone))
+            heatmap(approx_residua, zone,  'approx_residual',  fileName='approx_residual_{}'.format(zone))
 
 
 
             approx_residua_2 = original_od - approx_2
-            heatmap(approx_residua_2, zone,  'approx_residual', fileName='approx_2_residual_{}'.format(zone))
+            approx_residua_2 = np.array(approx_residua_2).astype(float)
+            approx_coef = calculate_gap_RMSE(original_od, approx_residua_2)
+            heatmap(approx_residua_2, zone,  'approx_residual',addiTitle = ' average values = {}'.format(np.average(approx_residua_2)), fileName='approx_2_residual_{}'.format(zone))
+
+            residua_3D_plot(approx_residua_2, zone, extraName = '_OwnCoef')
 
 
 
@@ -84,6 +91,7 @@ def main():
         if not explanatory_analyses:
             total_gap['none'][move]  = [(original_gap, 'original')]
             total_gap['none'][move].append((simple_approx_gap, 'simple reg.'))
+            total_gap['none'][move].append((approx_coef, 'approx coef'))
             # total_gap['none'][move].append((simple_approx_gap_norm, 'simple reg. (norm)'))
         else:
             summary += 'EXPLANATORY LINEAR REGRESSION\n\n'

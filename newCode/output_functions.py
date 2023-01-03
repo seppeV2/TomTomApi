@@ -329,7 +329,7 @@ def residua_in_bars(residua, fileName, zone):
     plt.savefig(path+'/{}.png'.format(fileName))
 
 # 
-def residua_3D_plot(residua, zone):
+def residua_3D_plot(residua, zone, extraName = ''):
     fig = plt.figure()
     ax = plt.axes(projection = "3d")
     
@@ -362,4 +362,4 @@ def residua_3D_plot(residua, zone):
     ax.set_title('3D plot of residua zone {}'.format(zone))
     path = str(pathlib.Path(__file__).parents[1])+'/graphsFromResults/3D'
     os.makedirs(path, exist_ok=True)
-    plt.savefig(path + '/3D_plot_{}.png'.format(zone))
+    plt.savefig(path + '/3D_plot_{}.png'.format(zone+extraName))

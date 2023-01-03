@@ -258,3 +258,18 @@ def calculate_perc_matrix(matrix1, matrix2, zone):
     
     
     return perc_matrix
+
+
+#function to find the coef where the squared error is the least significant
+def find_optimal_coef(array1,array2):
+
+    X = Symbol('X')
+    squaredError = 0
+    for i in range(len(array1)):
+        for j in range(len(array1)):
+            if j != i:
+                squaredError += (array1[i][j] - X*array2[i][j])**2
+
+    #now minimize this function
+    squaredErrorPrime = squaredError.diff(X)
+    return solve(squaredErrorPrime, X)[0]

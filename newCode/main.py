@@ -13,8 +13,8 @@ np.set_printoptions(suppress=True)
 
 
 def main():
-    zonings = ['ZoningSmallLeuven', 'BruggeWithoutZeeBrugge', 'Hasselt']
-    moves = ['LeuvenExternal', 'BruggeExternal', 'HasseltExternal']
+    zonings = ['ZoningSmallLeuven', 'BruggeWithoutZeeBrugge', 'Hasselt','Roeselare']
+    moves = ['LeuvenExternal', 'BruggeExternal', 'HasseltExternal', 'roeselare']
     cluster_ways = ['population_per_stasec_TOTAL', 'households_cars_statsec_2021_total_huisH', 'households_cars_statsec_2021_total_wagens']
     methods = ['sum']
 
